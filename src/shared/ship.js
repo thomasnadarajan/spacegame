@@ -1,18 +1,37 @@
 import ship_map from './assets/tilemap-editor.json'
 
 var ship_grid = Array(10).fill().map(() => Array(10))
+var grid_types = {}
 for (const key in ship_map.map) {
     const target_x = parseInt(key.split("-")[0])
     const target_y = parseInt(key.split("-")[1])
     if ((ship_map.map[key].x === 6 && ship_map.map[key].y === 1) || (ship_map.map[key].x === 4 && ship_map.map[key].y === 3)) {
         ship_grid[target_x][target_y] = 1
+        if (ship_map.map[key].x === 6 && ship_map.map[key].y === 1) {
+            if ('floor' in grid_types) {
+                grid_types['floor'].push({x: target_x, y: target_y})
+            }
+            else {
+                grid_types['floor'] = [{x: target_x, y: target_y}]
+            }
+        }
+        else if (ship_map.map[key].x === 4 && ship_map.map[key].y === 3) {
+            if ('transport' in grid_types) {
+                grid_types['transport'].push({x: target_x, y: target_y})
+            }
+            else {
+                grid_types['transport'] = [{x: target_x, y: target_y}]
+            }
+        }
     }
     else {
         ship_grid[target_x][target_y] = 0
     }
 }
+
 export class ship {
     static grid = ship_grid
+    static type = grid_types
     constructor(x, y, player, id) {
         this.id = id
         // this is the top left position of the ship

@@ -57,16 +57,29 @@ function renderTransportMenu(menu) {
         else if (menu.components[comp].Type === 'buttonList') {
             let currentHeight = 0
             c.font = menu.listFontSize.concat("px Antonio")
-            for (const ship of menu.shipList) {
-                if (menu.components[comp].Mouseover === true && menu.components[comp].Segment === currentHeight) {
-                    console.log(menu.components[comp].Segment)
-                    c.fillStyle = 'white'
+            if (comp === 'CrewList') {
+                for (const crew of menu.crewList) {
+                    if (menu.components[comp].Mouseover === true && menu.components[comp].Segment === currentHeight || menu.selectedPlayer === crew) {
+                        c.fillStyle = 'white'
+                    }
+                    else {
+                        c.fillStyle = 'black'
+                    }
+                    c.fillText(crew, menu.components[comp].LeftBound, menu.components[comp].BotBound - currentHeight * 2 * parseInt(menu.listFontSize))
+                    currentHeight += 1 
                 }
-                else {
-                    c.fillStyle = 'black'
+            }
+            else {
+                for (const ship of menu.shipList) {
+                    if (menu.components[comp].Mouseover === true && menu.components[comp].Segment === currentHeight || menu.selectedShip === ship) {
+                        c.fillStyle = 'white'
+                    }
+                    else {
+                        c.fillStyle = 'black'
+                    }
+                    c.fillText(ship, menu.components[comp].LeftBound, menu.components[comp].BotBound - currentHeight * 2 * parseInt(menu.listFontSize))
+                    currentHeight += 1 
                 }
-                c.fillText(ship, menu.components[comp].LeftBound, menu.components[comp].BotBound - currentHeight * 2 * parseInt(menu.listFontSize))
-                currentHeight += 1 
             }
         }
     }

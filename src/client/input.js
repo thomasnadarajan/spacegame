@@ -34,6 +34,10 @@ const highlight = (e) => {
     let y = e.clientY - rect.top
     game.updateMousePosition(x,y)
 }
+
+const menuclick = (e) => {
+    game.updateMouseClick()
+}
 /*
 addEventListener('resize', () => {
     console.log('gets here: resize')
@@ -53,4 +57,10 @@ export function enableMouseDirection() {
 }
 export function activateMenuListener() {
     addEventListener('mousemove', highlight)
+    addEventListener('mousedown', menuclick)
+}
+
+export function disableMenuListener() {
+    removeEventListener('mousemove', highlight)
+    removeEventListener('mousedown', menuclick)
 }

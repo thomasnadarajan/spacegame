@@ -1,5 +1,5 @@
 import {animate} from './render'
-import { enableMouseDirection, disableMouseDirection, activateMenuListener } from './input'
+import { enableMouseDirection, disableMouseDirection, activateMenuListener, disableMenuListener } from './input'
 import { menustack } from './render'
 import {transportmenu, cargomenu} from './menu'
 
@@ -27,7 +27,7 @@ export class gamemanager {
         const currentMenu = menustack[menustack.length - 1]
         for (const comp in currentMenu.components) {
             if (currentMenu.components[comp].Type === 'button') {
-                currentMenu.components[comp].Mouseover = currentMenu.isHover(currentMenu.components[comp], x, y)
+                currentMenu.components[comp].Mouseover = currentMenu.isHover(currentMenu.components[comp], x, y).Mouseover
             }
             else if (currentMenu.components[comp].Type === 'buttonList'){
                 const check = currentMenu.isHover(currentMenu.components[comp], x, y)
@@ -37,7 +37,18 @@ export class gamemanager {
         }
     }
     updateMouseClick() {
-
+        const currentMenu = menustack[menustack.length - 1]
+        for (const comp in currentMenu.components) {
+            const check = currentMenu.components[comp].Mouseover
+            if (check) {
+                const ret = currentMenu.clicked(comp)
+                if (ret != null && ret === 'close') {
+                    menustack.pop()
+                    disableMenuListener()
+                }
+            }
+        }
+        
     }
     renderCurrentState() {
         this.animationFrameRequest = requestAnimationFrame(animate.bind(this.currentState))

@@ -1,5 +1,5 @@
-// all menus are client side
 import {distanceCalc} from './gamemanager.js'
+import {ship} from '../shared/ship.js'
 export class menu {
     constructor(heading) {
         // each of these 
@@ -21,17 +21,17 @@ export class menu {
         if (comp.Type === 'button') {
             if (comp.Alignment === 'left') {
                 if (x > comp.LeftBound && x < comp.LeftBound + comp.Width && y < comp.BotBound && y > comp.BotBound - Math.round(this.mainHeight * 0.05)) {
-                    return true
+                    return {Mouseover: true, Segment: 0}
                 }
             }
             else if (comp.Alignment === 'center') {
                 if (x > comp.LeftBound - comp.Width / 2 && x < comp.LeftBound + comp.Width / 2 && y < comp.BotBound && y > comp.BotBound - Math.round(this.mainHeight * 0.05)) {
-                    return true
+                    return {Mouseover: true, Segment: 0}
                 }
             }
             else if (comp.Alignment === 'right') {
                 if (x > comp.LeftBound - comp.Width && x < comp.LeftBound && y < comp.BotBound && y > comp.BotBound - Math.round(this.mainHeight * 0.05)) {
-                    return true
+                    return {Mouseover: true, Segment: 0}
                 }
             }
         }
@@ -47,15 +47,17 @@ export class menu {
                 }
             }
             else if (comp.Alignment === 'right') {
-                for (let i = 0; i < 4; i++) {
-                    if (y < comp.BotBound - i * 2 * parseInt(this.listFontSize) && y > comp.BotBound - i * 2 * parseInt(this.listFontSize) - parseInt(this.listFontSize)) {
-                        return {Mouseover: true, Segment: i}
+                if (x < comp.LeftBound && x > comp.LeftBound - comp.Width) {
+                    for (let i = 0; i < 4; i++) {
+                        if (y < comp.BotBound - i * 2 * parseInt(this.listFontSize) && y > comp.BotBound - i * 2 * parseInt(this.listFontSize) - parseInt(this.listFontSize)) {
+                            return {Mouseover: true, Segment: i}
+                        }
                     }
+                    return {Mouseover: false, Segment: 0}
                 }
-                return {Mouseover: false, Segment: 0}
             }
         }
-        return false
+        return {Mouseover: false, Segment: 0}
     }
 
 }
@@ -125,7 +127,8 @@ export class transportmenu extends menu {
                 Type: 'title',
                 LeftBound: this.topBoundHoriz + this.width - 0.1 * this.width,
                 BotBound: 0.2 * this.mainHeight + this.mainTopBound,
-                Alignment: 'right'
+                Alignment: 'right',
+                Alternate: 'Retriever'
             },
             "CrewList": {
                 Type: 'buttonList',
@@ -133,7 +136,8 @@ export class transportmenu extends menu {
                 BotBound: this.mainTopBound + this.mainHeight - 0.3 * this.mainHeight,
                 Alignment: 'left',
                 Mouseover: false,
-                Segment: 0
+                Segment: 0,
+                Width: this.buttonWidth
             },
             "ShipList": {
                 Type: 'buttonList',
@@ -141,7 +145,8 @@ export class transportmenu extends menu {
                 BotBound: this.mainTopBound + this.mainHeight - 0.3 * this.mainHeight,
                 Alignment: 'right',
                 Mouseover: false,
-                Segment: 0
+                Segment: 0,
+                Width: this.buttonWidth
             },
             "Transport": {
                 Type: 'button',
@@ -170,8 +175,10 @@ export class transportmenu extends menu {
         }
         this.shipList = []
         this.crewList = []
-        this.player = null
-        this.destination = null
+        this.selectedPlayer = null
+        this.selectedShip = null
+
+        this.mode = 'send'
     }
     update(data) {
         this.shipList = []
@@ -186,6 +193,68 @@ export class transportmenu extends menu {
         for (let i = 0; i < sortedArr.length && i < 4; i++) {
             this.shipList.push(sortedArr[i][0])
         }
+        var found = false
+        for (const ship of this.shipList) {
+            if (ship === this.selectedShip) {
+                found = true
+                break
+            }
+        }
+        if (!found) {
+            this.selectedShip = null
+            this.selectedPlayer = null
+        }
         
+        if (this.mode === 'send') {
+            found = false
+            for (const player in data.players) {
+                if (data.players[player].currentShip === myShip) {
+                    for (const position in ship.type['transport']) {
+                        if (position.x === data.players[player].position.x && position.y === data.players[player].position.y) {
+                            if (this.selectedPlayer === data.players[player].user) {
+                                found = true
+                            }
+                            this.crewList.push(player)
+                        }
+                    }
+                }
+            }
+            if (!found) {
+                this.selectedPlayer = null
+            }
+        }
+        else {
+            if (this.selectedShip != null) {
+                for (const player in data.players) {
+                    if (data.players[player].currentShip === this.selectedShip) {
+                        for (const position in ship.type['transport']) {
+                            if (position.x === data.players[player].position.x && position.y === data.players[player].position.y) {
+                                this.crewList.push(player)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    clicked(comp) {
+        const component = this.components[comp]
+        if (comp === 'Close') {
+            return 'close'
+        }
+        else if (comp === 'Mode') {
+            this.mode = this.mode === 'send' ? 'retrieve' : 'send'
+            return null
+        }
+
+        if (component.Type === 'buttonList') {
+            if (comp === 'ShipList') {
+                this.selectedShip = this.shipList[component.Segment]
+            }
+            else {
+                this.selectedPlayer = this.crewList[component.Segment]
+            }
+        }
     }
 }
