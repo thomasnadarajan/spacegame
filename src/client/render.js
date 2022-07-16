@@ -52,13 +52,19 @@ function renderTransportMenu(menu) {
         }
         else if (menu.components[comp].Type === 'title') {
             c.font = menu.mainFontSize.concat("px Antonio")
-            c.fillText(comp, menu.components[comp].LeftBound, menu.components[comp].BotBound)
+            if (menu.components[comp].Alternative) {
+                c.fillText(menu.components[comp].AlternativeText, menu.components[comp].LeftBound, menu.components[comp].BotBound)
+            }
+            else {
+                c.fillText(comp, menu.components[comp].LeftBound, menu.components[comp].BotBound)
+            }
         }
         else if (menu.components[comp].Type === 'buttonList') {
             let currentHeight = 0
             c.font = menu.listFontSize.concat("px Antonio")
             if (comp === 'CrewList') {
                 for (const crew of menu.crewList) {
+                    console.log('gets here')
                     if (menu.components[comp].Mouseover === true && menu.components[comp].Segment === currentHeight || menu.selectedPlayer === crew) {
                         c.fillStyle = 'white'
                     }

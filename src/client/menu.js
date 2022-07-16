@@ -128,7 +128,8 @@ export class transportmenu extends menu {
                 LeftBound: this.topBoundHoriz + this.width - 0.1 * this.width,
                 BotBound: 0.2 * this.mainHeight + this.mainTopBound,
                 Alignment: 'right',
-                Alternate: 'Retriever'
+                Alternative: false,
+                AlternativeText: 'Retrieve From'
             },
             "CrewList": {
                 Type: 'buttonList',
@@ -182,6 +183,7 @@ export class transportmenu extends menu {
     }
     update(data) {
         this.shipList = []
+        this.crewList = []
         const myShip = data.ships[data.me.currentShip]
         let dists = {}
         for (const ship in data.ships) {
@@ -225,12 +227,11 @@ export class transportmenu extends menu {
         }
         else {
             if (this.selectedShip != null) {
-                for (const player in data.players) {
-                    if (data.players[player].currentShip === this.selectedShip) {
-                        for (const position in ship.type['transport']) {
-                            if (position.x === data.players[player].position.x && position.y === data.players[player].position.y) {
-                                this.crewList.push(player)
-                            }
+                for (const player of data.ships[this.selectedShip].players) {
+                    for (const position of ship.type['transport']) {
+                        console.log(data.players[player].position, position)
+                        if (position.x === data.players[player].position.x && position.y === data.players[player].position.y) {
+                            this.crewList.push(data.players[player].user)
                         }
                     }
                 }
@@ -245,6 +246,11 @@ export class transportmenu extends menu {
         }
         else if (comp === 'Mode') {
             this.mode = this.mode === 'send' ? 'retrieve' : 'send'
+            for (const comp in this.components) {
+                if (comp === 'Destination') {
+                    this.components[comp].Alternative = true
+                }
+            }
             return null
         }
 
