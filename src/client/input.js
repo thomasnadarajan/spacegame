@@ -1,6 +1,5 @@
 import {game} from './index'
 import {throttle} from 'throttle-debounce'
-
 const mouseMove = (e) => {
     const newdir = Math.atan2(e.x - window.innerWidth / 2, window.innerHeight / 2 - e.y)
     throttle(20, game.handleMouseInput(newdir))
@@ -27,6 +26,7 @@ const directionIn = ({key}) => {
     }
 }
 
+
 const highlight = (e) => {
     const canvas = document.querySelector('canvas')
     let rect = canvas.getBoundingClientRect();
@@ -45,9 +45,18 @@ addEventListener('resize', () => {
 })
 */
 
+const requestUserDetails = () => {
+    const ship = document.getElementById('name').value
+    //console.log(ship)
+    game.addPlayer(ship)
+    document.getElementById('name').style.display = 'none'
+    document.getElementById('sub').style.display = 'none'
+}
+
 export function activateEventListener() {
     //addEventListener('mousemove', mouseMove)
     addEventListener('keydown', directionIn)
+    document.getElementById('sub').addEventListener('click', requestUserDetails)
 }
 export function disableMouseDirection() {
     removeEventListener('mousemove', mouseMove)

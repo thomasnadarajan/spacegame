@@ -64,7 +64,6 @@ function renderTransportMenu(menu) {
             c.font = menu.listFontSize.concat("px Antonio")
             if (comp === 'CrewList') {
                 for (const crew of menu.crewList) {
-                    console.log('gets here')
                     if (menu.components[comp].Mouseover === true && menu.components[comp].Segment === currentHeight || menu.selectedPlayer === crew) {
                         c.fillStyle = 'white'
                     }
@@ -139,7 +138,7 @@ function playerRenderPilotMode(player, playerShip, centerShip) {
     c.save()
     c.translate(canvasX, canvasY)
     c.rotate(playerShip.rotation)
-    c.fillStyle = 'red'
+    c.fillStyle = 'black'
     c.fillRect(-player.width / 2 + (player.position.x * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, -player.height / 2 + (player.position.y * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, 
     player.width, player.height)
     c.restore()
@@ -160,7 +159,7 @@ function playerRenderPlayerMode(player, playerShip, centerShip) {
     if (playerShip.position.x - centerShip.position.x !== 0 || playerShip.position.y - centerShip.position.y !== 0) {
         c.rotate(playerShip.rotation)
     }
-    c.fillStyle = 'red'
+    c.fillStyle = 'black'
     c.fillRect(-player.width / 2 + (player.position.x * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, -player.height / 2 + (player.position.y * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, 
     player.width, player.height)
     c.restore()

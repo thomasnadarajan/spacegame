@@ -1,4 +1,5 @@
 import {distanceCalc} from './gamemanager.js'
+import {game} from './index'
 import {ship} from '../shared/ship.js'
 export class menu {
     constructor(heading) {
@@ -178,13 +179,15 @@ export class transportmenu extends menu {
         this.crewList = []
         this.selectedPlayer = null
         this.selectedShip = null
-
+        this.selectedPlayerSend = null
         this.mode = 'send'
     }
     update(data) {
         this.shipList = []
         this.crewList = []
         const myShip = data.ships[data.me.currentShip]
+        console.log(myShip.players)
+        //console.log(myShip)
         let dists = {}
         for (const ship in data.ships) {
             if (ship != data.me.currentShip) {
@@ -209,15 +212,15 @@ export class transportmenu extends menu {
         
         if (this.mode === 'send') {
             found = false
-            for (const player in data.players) {
-                if (data.players[player].currentShip === myShip) {
-                    for (const position in ship.type['transport']) {
-                        if (position.x === data.players[player].position.x && position.y === data.players[player].position.y) {
-                            if (this.selectedPlayer === data.players[player].user) {
-                                found = true
-                            }
-                            this.crewList.push(player)
+
+            for (const player of myShip.players) {
+                console.log(player)
+                for (const position of ship.type['transport']) {
+                    if (position.x === data.players[player].position.x && position.y === data.players[player].position.y) {
+                        if (this.selectedPlayer === data.players[player].user) {
+                            found = true
                         }
+                        this.crewList.push(data.players[player].user)
                     }
                 }
             }
@@ -229,7 +232,6 @@ export class transportmenu extends menu {
             if (this.selectedShip != null) {
                 for (const player of data.ships[this.selectedShip].players) {
                     for (const position of ship.type['transport']) {
-                        console.log(data.players[player].position, position)
                         if (position.x === data.players[player].position.x && position.y === data.players[player].position.y) {
                             this.crewList.push(data.players[player].user)
                         }
@@ -239,7 +241,7 @@ export class transportmenu extends menu {
         }
     }
 
-    clicked(comp) {
+    clicked(comp, data) {
         const component = this.components[comp]
         if (comp === 'Close') {
             return 'close'
@@ -253,12 +255,21 @@ export class transportmenu extends menu {
             }
             return null
         }
+        else if (comp === 'Transport') {
+            game.handleTransportRequest()
+        }
 
         if (component.Type === 'buttonList') {
             if (comp === 'ShipList') {
                 this.selectedShip = this.shipList[component.Segment]
             }
             else {
+                for (const p in data.players) {
+                    if (data.players[p].user === this.crewList[component.Segment]) {
+                        this.selectedPlayerSend = p
+                        break
+                    }
+                }
                 this.selectedPlayer = this.crewList[component.Segment]
             }
         }

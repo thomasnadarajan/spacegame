@@ -41,14 +41,13 @@ export class gamemanager {
         for (const comp in currentMenu.components) {
             const check = currentMenu.components[comp].Mouseover
             if (check) {
-                const ret = currentMenu.clicked(comp)
+                const ret = currentMenu.clicked(comp, this.currentState)
                 if (ret != null && ret === 'close') {
                     menustack.pop()
                     disableMenuListener()
                 }
             }
         }
-        
     }
     renderCurrentState() {
         this.animationFrameRequest = requestAnimationFrame(animate.bind(this.currentState))
@@ -76,6 +75,32 @@ export class gamemanager {
         }
         else {
             this.socket.emit('keyInput', input)
+        }
+    }
+    handleTransportRequest() {
+        const currentMenu = menustack[menustack.length - 1]
+        if (currentMenu.mode === 'send') {
+            this.socket.emit('transport', {
+                player: currentMenu.selectedPlayerSend,
+                ship: currentMenu.selectedShip
+            })
+
+            menustack.pop()
+        }
+        else {
+
+        }
+    }
+
+    // THIS IS JUST FOR TESTING
+    addPlayer(ship, username = null) {
+        if (username === null) {
+            if (ship === '') {
+                this.socket.emit('addPlayer', {s: null})
+            }
+            else {
+                this.socket.emit('addPlayer', {s: ship})
+            }
         }
     }
 }
