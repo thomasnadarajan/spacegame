@@ -24,7 +24,7 @@ io.on('connection', socket => {
       g.setShipDirection(g.players[socket.id], data)
     })
     socket.on('keyInput', data => {
-      g.handleDirectionInput(g.players[socket.id], data)
+      g.handleDirectionInput(socket.id, data)
     })
     socket.on('transport', data => {
       g.movePlayer(data.player, data.ship)

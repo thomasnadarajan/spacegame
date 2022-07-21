@@ -59,19 +59,22 @@ export class gamemanager {
         if (input === 'use') {
             if (this.currentState.me.position.x === 8 && this.currentState.me.position.y === 2) {
                 console.log('tactical')
+                activateMenuListener()
             }
             else if (this.currentState.me.position.x === 8 && this.currentState.me.position.y === 6) {
                 console.log('transport')
                 menustack.push(new transportmenu())
+                activateMenuListener()
             }
             else if (this.currentState.me.position.x === 3 && this.currentState.me.position.y === 6) {
                 console.log('cargo')
                 menustack.push(new cargomenu())
+                activateMenuListener()
             }
             else {
                 this.socket.emit('keyInput', input)
             }
-            activateMenuListener()
+            
         }
         else {
             this.socket.emit('keyInput', input)
