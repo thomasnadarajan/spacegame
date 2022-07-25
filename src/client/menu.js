@@ -17,6 +17,8 @@ export class menu {
         this.buttonFontSize = Math.round(this.mainHeight * 0.05).toString()
         this.listFontSize = Math.round(this.mainFontSize * 0.5).toString()
         this.buttonWidth = this.width * 0.15
+        this.shifterHeight = this.mainHeight * 0.1
+        this.shifterFontSize = Math.round(this.mainHeight * 0.1 * 0.5).toString()
     }
     isHover(comp, x, y) {
         if (comp.Type === 'button') {
@@ -51,6 +53,39 @@ export class menu {
                 if (x < comp.LeftBound && x > comp.LeftBound - comp.Width) {
                     for (let i = 0; i < 4; i++) {
                         if (y < comp.BotBound - i * 2 * parseInt(this.listFontSize) && y > comp.BotBound - i * 2 * parseInt(this.listFontSize) - parseInt(this.listFontSize)) {
+                            return {Mouseover: true, Segment: i}
+                        }
+                    }
+                    return {Mouseover: false, Segment: 0}
+                }
+            }
+        }
+
+        else if (comp.Type === 'shifter') {
+            if (comp.Alignment === 'left') {
+                if (x > comp.LeftBound && x < comp.LeftBound + comp.Width) {
+                    for (let i = 0; i < 5; i++) {
+                        if (y > comp.BotBound - ((i + 1) * this.shifterHeight) && y < comp.BotBound - ((i) * this.shifterHeight)) {
+                            return {Mouseover: true, Segment: i}
+                        }
+                    }
+                    return {Mouseover: false, Segment: 0}
+                }
+            }
+            else if (comp.Alignment === 'right') {
+                if (x < comp.LeftBound && x > comp.LeftBound - comp.Width) {
+                    for (let i = 0; i < 5; i++) {
+                        if (y > comp.BotBound - ((i + 1) * this.shifterHeight) && y < comp.BotBound - ((i) * this.shifterHeight)) {
+                            return {Mouseover: true, Segment: i}
+                        }
+                    }
+                    return {Mouseover: false, Segment: 0}
+                }
+            }
+            else if (comp.Alignment === 'center') {
+                if (x > comp.LeftBound - comp.Width / 2 && x < comp.LeftBound + comp.Width / 2) {
+                    for (let i = 0; i < 5; i++) {
+                        if (y > comp.BotBound - ((i + 1) * this.shifterHeight) && y < comp.BotBound - ((i) * this.shifterHeight)) {
                             return {Mouseover: true, Segment: i}
                         }
                     }
@@ -186,8 +221,6 @@ export class transportmenu extends menu {
         this.shipList = []
         this.crewList = []
         const myShip = data.ships[data.me.currentShip]
-        console.log(myShip.players)
-        //console.log(myShip)
         let dists = {}
         for (const ship in data.ships) {
             if (ship != data.me.currentShip) {
@@ -272,6 +305,93 @@ export class transportmenu extends menu {
                 }
                 this.selectedPlayer = this.crewList[component.Segment]
             }
+        }
+    }
+}
+
+export class tacticalmenu extends menu {
+    constructor() {
+        super('Tactical')
+        this.components = {
+            "Weapons Power": {
+                Type: 'title',
+                BotBound: 0.1 * this.mainHeight + this.mainTopBound,
+                LeftBound: this.topBoundHoriz + 0.1 * this.width,
+                Alignment: 'left'
+            },
+            "Shields Power": {
+                Type: 'title',
+                BotBound: 0.1 * this.mainHeight + this.mainTopBound,
+                LeftBound: this.topBoundHoriz + this.width / 2,
+                Alignment: 'center'
+            },
+            "Engines Power": {
+                Type: 'title',
+                LeftBound: this.topBoundHoriz + this.width - 0.1 * this.width,
+                BotBound: 0.1 * this.mainHeight + this.mainTopBound,
+                Alignment: 'right',
+            },
+            "Weapons": {
+                Type: 'button',
+                LeftBound: this.topBoundHoriz + 0.1 * this.width,
+                BotBound: this.mainTopBound + this.mainHeight - 0.1 * this.mainHeight,
+                Mouseover: false,
+                Alignment: 'left',
+                Width: this.buttonWidth
+            },
+            "Close" : {
+                Type: 'button',
+                LeftBound: this.topBoundHoriz + this.width - 0.1 * this.width,
+                BotBound: this.mainTopBound + this.mainHeight - 0.1 * this.mainHeight,
+                Mouseover: false,
+                Alignment: 'right',
+                Width: this.buttonWidth
+            },
+            "WeaponsShifter": {
+                Type: 'shifter',
+                LeftBound: this.topBoundHoriz + 0.1 * this.width,
+                BotBound: this.mainTopBound + this.mainHeight - 0.3 * this.mainHeight,
+                Mouseover: false,
+                Alignment: 'left',
+                Width: this.buttonWidth,
+                Segments: 0,
+                Level: 0
+            },
+            "ShieldsShifter": {
+                Type: 'shifter',
+                LeftBound: this.topBoundHoriz + this.width / 2,
+                BotBound: this.mainTopBound + this.mainHeight - 0.3 * this.mainHeight,
+                Mouseover: false,
+                Alignment: 'center',
+                Width: this.buttonWidth,
+                Segments: 0,
+                Level: 0
+            },
+            "EnginesShifter": {
+                Type: 'shifter',
+                LeftBound: this.topBoundHoriz + this.width - 0.1 * this.width,
+                BotBound: this.mainTopBound + this.mainHeight - 0.3 * this.mainHeight,
+                Mouseover: false,
+                Alignment: 'right',
+                Width: this.buttonWidth,
+                Segments: 0,
+                Level: 0
+            }
+            
+
+        }
+    }
+    update(data) {
+
+    }
+    clicked(comp, data) {
+        const component = this.components[comp]
+        if (comp === 'Close') {
+            return 'close'
+        }
+
+        if (component.Type === 'shifter') {
+            this.components[comp].Level = component.Segment
         }
     }
 }

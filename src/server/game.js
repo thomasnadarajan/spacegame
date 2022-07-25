@@ -72,7 +72,7 @@ export class game {
             Object.keys(this.sockets).forEach(playerID => {
                 const socket = this.sockets[playerID];
                 if (playerID in this.players) {
-                    this.players[playerID].update()
+                    //this.players[playerID].update()
                     const player = this.players[playerID];
                     socket.emit('update', this.generateGameUpdate(player));
                 }

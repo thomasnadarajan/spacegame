@@ -47,7 +47,6 @@ addEventListener('resize', () => {
 
 const requestUserDetails = () => {
     const ship = document.getElementById('name').value
-    //console.log(ship)
     game.addPlayer(ship)
     document.getElementById('name').style.display = 'none'
     document.getElementById('sub').style.display = 'none'

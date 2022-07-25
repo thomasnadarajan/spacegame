@@ -17,7 +17,6 @@ console.log('server running!')
 io.on('connection', socket => {
     g.addConnection(socket)
     socket.on('addPlayer', (data) => {
-      console.log(data)
       g.addPlayer(socket, 'test'.concat(count.toString()), data.s)
     })
     socket.on('mouseInput', data => {

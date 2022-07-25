@@ -119,6 +119,56 @@ function renderCargoMenu(menu) {
     }
 
 }
+function renderTacticalMenu(menu) {
+    // HEADER STUFF
+    renderMenuHeader(menu)
+    // MAIN STUFF
+    c.fillStyle = '#ffaa90'
+    c.fillRect(menu.topBoundHoriz, menu.mainTopBound,menu.width, menu.mainHeight)
+    c.fillStyle = 'black'
+    c.font = menu.mainFontSize.concat("px Antonio")
+    for (const comp in menu.components) {
+        if (menu.components[comp].Type === 'button') {
+            c.textAlign = 'center'
+            c.font = menu.buttonFontSize.concat("px Antonio")
+            c.fillText(comp, menu.components[comp].LeftBound, menu.components[comp].BotBound)
+        }
+        else if (menu.components[comp].Type === 'shifter') {
+            c.strokeStyle = 'black'
+            c.lineWidth = 10
+            for (let i = 0; i < 5; i++) {
+                var fill = false
+                if (i <= menu.components[comp].Level) {
+                    fill = true
+                    c.fillStyle = 'white'
+                }
+                if (menu.components[comp].Alignment === 'left') {
+                    c.strokeRect(menu.components[comp].LeftBound, menu.components[comp].BotBound - (menu.shifterHeight * (i + 1)), menu.components[comp].Width, menu.shifterHeight)
+                    if (fill) {
+                        c.fillRect(menu.components[comp].LeftBound, menu.components[comp].BotBound - (menu.shifterHeight * (i + 1)), menu.components[comp].Width, menu.shifterHeight)
+                    }
+                }
+                else if (menu.components[comp].Alignment === 'center') {
+                    c.strokeRect(menu.components[comp].LeftBound - menu.components[comp].Width / 2, menu.components[comp].BotBound - (menu.shifterHeight * (i + 1)), menu.components[comp].Width, menu.shifterHeight)
+                    if (fill) {
+                        c.fillRect(menu.components[comp].LeftBound - menu.components[comp].Width / 2, menu.components[comp].BotBound - (menu.shifterHeight * (i + 1)), menu.components[comp].Width, menu.shifterHeight)
+                    }
+                }
+                else {
+                    c.strokeRect(menu.components[comp].LeftBound - menu.components[comp].Width, menu.components[comp].BotBound - (menu.shifterHeight * (i + 1)), menu.components[comp].Width, menu.shifterHeight)
+                    if (fill) {
+                        c.fillRect(menu.components[comp].LeftBound - menu.components[comp].Width, menu.components[comp].BotBound - (menu.shifterHeight * (i + 1)), menu.components[comp].Width, menu.shifterHeight)
+                    }
+                }
+            }
+        }
+        else if (menu.components[comp].Type === 'title') {
+            c.font = menu.shifterFontSize.concat("px Antonio")
+            c.textAlign = menu.components[comp].Alignment
+            c.fillText(comp, menu.components[comp].LeftBound, menu.components[comp].BotBound)
+        }
+    }
+}
 function menuRender(menu, data) {
     if (menu.heading === 'Transport') {
         menu.update(data)
@@ -127,7 +177,10 @@ function menuRender(menu, data) {
     else if (menu.heading === 'Cargo') {
         menu.update(data.ships[data.me.currentShip])
         renderCargoMenu(menu)
-        
+    }
+    else if (menu.heading === 'Tactical') {
+        menu.update(data.ships[data.me.currentShip])
+        renderTacticalMenu(menu)
     }
 }
 function playerRenderPilotMode(player, playerShip, centerShip) {

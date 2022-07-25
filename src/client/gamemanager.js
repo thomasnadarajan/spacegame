@@ -1,7 +1,7 @@
 import {animate} from './render'
 import { enableMouseDirection, disableMouseDirection, activateMenuListener, disableMenuListener } from './input'
 import { menustack } from './render'
-import {transportmenu, cargomenu} from './menu'
+import {transportmenu, cargomenu, menu, tacticalmenu} from './menu'
 
 export function distanceCalc(ship1, ship2) {
     return Math.sqrt(Math.pow(ship1.position.x - ship2.position.x, 2) + Math.pow(ship1.position.y - ship2.position.y, 2))
@@ -34,6 +34,11 @@ export class gamemanager {
                 currentMenu.components[comp].Mouseover = check.Mouseover
                 currentMenu.components[comp].Segment = check.Segment
             }
+            else if (currentMenu.components[comp].Type === 'shifter'){
+                const check = currentMenu.isHover(currentMenu.components[comp], x, y)
+                currentMenu.components[comp].Mouseover = check.Mouseover
+                currentMenu.components[comp].Segment = check.Segment
+            }
         }
     }
     updateMouseClick() {
@@ -59,6 +64,7 @@ export class gamemanager {
         if (input === 'use') {
             if (this.currentState.me.position.x === 8 && this.currentState.me.position.y === 2) {
                 console.log('tactical')
+                menustack.push(new tacticalmenu())
                 activateMenuListener()
             }
             else if (this.currentState.me.position.x === 8 && this.currentState.me.position.y === 6) {
