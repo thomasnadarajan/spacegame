@@ -2,8 +2,9 @@ import {distanceCalc} from './gamemanager.js'
 import {game} from './index'
 import {ship} from '../shared/ship.js'
 export class menu {
-    constructor(heading) {
+    constructor(heading, ship) {
         // each of these 
+        this.ship = ship
         this.heading = heading
         this.headerHeight = innerHeight * 0.1
         this.mainHeight = innerHeight * 0.5
@@ -99,8 +100,8 @@ export class menu {
 }
 
 export class cargomenu extends menu {
-    constructor() {
-        super('Cargo')
+    constructor(ship) {
+        super('Cargo', ship)
         this.components = {
             "Units Available": {
                 Type: 'title',
@@ -150,8 +151,8 @@ export class cargomenu extends menu {
 }
 
 export class transportmenu extends menu {
-    constructor() {
-        super('Transport')
+    constructor(ship) {
+        super('Transport', ship)
         this.components = {
             "Crewperson": {
                 Type: 'title',
@@ -310,8 +311,8 @@ export class transportmenu extends menu {
 }
 
 export class tacticalmenu extends menu {
-    constructor() {
-        super('Tactical')
+    constructor(ship) {
+        super('Tactical', ship)
         this.components = {
             "Weapons Power": {
                 Type: 'title',
@@ -338,6 +339,12 @@ export class tacticalmenu extends menu {
                 Mouseover: false,
                 Alignment: 'left',
                 Width: this.buttonWidth
+            },
+            "Available Power: " : {
+                Type: 'title',
+                BotBound: this.mainTopBound + this.mainHeight - 0.2 * this.mainHeight,
+                LeftBound: this.topBoundHoriz + this.width / 2,
+                Alignment: 'center'
             },
             "Close" : {
                 Type: 'button',
@@ -380,18 +387,34 @@ export class tacticalmenu extends menu {
             
 
         }
+        this.availablePower = 0
     }
     update(data) {
-
+        this.availablePower = data.availablePower
+        for (const comp in this.components) {
+            if (comp === 'WeaponsShifter') {
+                this.components[comp].Level = data.systems.weapons - 1
+            }
+            else if (comp === 'ShieldsShifter') {
+                this.components[comp].Level = data.systems.shields - 1
+            }
+            else if (comp === 'EnginesShifter') {
+                this.components[comp].Level = data.systems.engines - 1
+            }
+        }
     }
-    clicked(comp, data) {
+    clicked(comp) {
         const component = this.components[comp]
         if (comp === 'Close') {
             return 'close'
         }
 
         if (component.Type === 'shifter') {
-            this.components[comp].Level = component.Segment
+            console.log(this.availablePower)
+            if (component.Segment - component.Level <= this.availablePower) {
+                this.components[comp].Level = component.Segment
+                game.handlePowerUpdate(comp, this.components[comp].Level, this.ship)
+            }
         }
     }
 }

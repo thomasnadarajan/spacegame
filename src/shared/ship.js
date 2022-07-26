@@ -44,7 +44,7 @@ export class ship {
         this.players = []
         this.moving = false
         this.availablePower = 2
-        this.systems = {shields: 4, engines: 4, weapons: 4}
+        this.systems = {shields: 1, engines: 1, weapons: 1}
         this.playerGrid = ship.grid.map((arr) => {return arr.slice()})
         for (let i = 0; i < 10; i++) {
             for (let j = 0; j < 10; j++) {

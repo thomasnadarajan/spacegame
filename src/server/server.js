@@ -28,6 +28,9 @@ io.on('connection', socket => {
     socket.on('transport', data => {
       g.movePlayer(data.player, data.ship)
     })
+    socket.on('powerUpdate', data => {
+      g.handlePowerUpdate(data.system, data.level, data.ship)
+    })
     count++
 })
 httpServer.listen(3000)

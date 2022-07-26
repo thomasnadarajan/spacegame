@@ -1,7 +1,7 @@
 import {animate} from './render'
 import { enableMouseDirection, disableMouseDirection, activateMenuListener, disableMenuListener } from './input'
 import { menustack } from './render'
-import {transportmenu, cargomenu, menu, tacticalmenu} from './menu'
+import {transportmenu, cargomenu, tacticalmenu} from './menu'
 
 export function distanceCalc(ship1, ship2) {
     return Math.sqrt(Math.pow(ship1.position.x - ship2.position.x, 2) + Math.pow(ship1.position.y - ship2.position.y, 2))
@@ -60,21 +60,24 @@ export class gamemanager {
     handleMouseInput(input) {
         this.socket.emit('mouseInput', input)
     }
+
+    handlePowerUpdate(comp, level, ship) {
+        const data = {system: comp, level: level, ship: ship}
+        this.socket.emit('powerUpdate', data)
+    }
     handleKeyInput(input) {
         if (input === 'use') {
             if (this.currentState.me.position.x === 8 && this.currentState.me.position.y === 2) {
-                console.log('tactical')
-                menustack.push(new tacticalmenu())
+                menustack.push(new tacticalmenu(this.currentState.me.currentShip))
                 activateMenuListener()
             }
             else if (this.currentState.me.position.x === 8 && this.currentState.me.position.y === 6) {
-                console.log('transport')
-                menustack.push(new transportmenu())
+                menustack.push(new transportmenu(this.currentState.me.currentShip))
                 activateMenuListener()
             }
             else if (this.currentState.me.position.x === 3 && this.currentState.me.position.y === 6) {
                 console.log('cargo')
-                menustack.push(new cargomenu())
+                menustack.push(new cargomenu(this.currentState.me.currentShip))
                 activateMenuListener()
             }
             else {
@@ -97,7 +100,7 @@ export class gamemanager {
             menustack.pop()
         }
         else {
-
+            console.log('receive goes here')
         }
     }
 

@@ -129,7 +129,8 @@ function renderTacticalMenu(menu) {
     c.font = menu.mainFontSize.concat("px Antonio")
     for (const comp in menu.components) {
         if (menu.components[comp].Type === 'button') {
-            c.textAlign = 'center'
+            c.textAlign = menu.components[comp].Alignment
+            c.fillStyle = mouseoverColor[menu.components[comp].Mouseover]
             c.font = menu.buttonFontSize.concat("px Antonio")
             c.fillText(comp, menu.components[comp].LeftBound, menu.components[comp].BotBound)
         }
@@ -163,9 +164,16 @@ function renderTacticalMenu(menu) {
             }
         }
         else if (menu.components[comp].Type === 'title') {
+            c.fillStyle = 'black'
             c.font = menu.shifterFontSize.concat("px Antonio")
             c.textAlign = menu.components[comp].Alignment
-            c.fillText(comp, menu.components[comp].LeftBound, menu.components[comp].BotBound)
+            if (comp === 'Available Power: ') {
+                c.fillText(comp.concat(menu.availablePower.toString()), menu.components[comp].LeftBound, menu.components[comp].BotBound)
+            }
+            else {
+                c.fillText(comp, menu.components[comp].LeftBound, menu.components[comp].BotBound)
+            }
+            
         }
     }
 }
