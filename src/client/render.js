@@ -30,8 +30,7 @@ export function setCanvasDims() {
     canvas.height = scaleRatio * innerHeight
     c.width = scaleRatio * innerWidth
     c.height = scaleRatio * innerHeight
-    //c.fillStyle = 'solid black'
-    //c.fillRect(0, 0, canvas.width, canvas.height)
+    
 }
 
 
@@ -190,6 +189,7 @@ function menuRender(menu, data) {
         menu.update(data.ships[data.me.currentShip])
         renderTacticalMenu(menu)
     }
+    c.fillStyle = 'black'
 }
 function playerRenderPilotMode(player, playerShip, centerShip) {
 
@@ -275,7 +275,9 @@ function shipRenderPilotMode(ship, centerShip) {
 // player always renders in the center of the screen
 // many test functions in here at the moment
 export function animate() {
+    c.fillStyle = 'black'
     c.clearRect(0, 0, canvas.width, canvas.height)
+    c.fillRect(0, 0, canvas.width, canvas.height)
     const playerShip = this.ships[this.me.currentShip]
     if (this.me.playerView) {
         for (const ship in this.ships) {

@@ -68,9 +68,7 @@ export class game {
         
     }
     handlePowerUpdate(system, level, ship) {
-        //console.log(system)
         const s = system.replace('Shifter', '').toLowerCase()
-
         const used = (level+1) - this.ships[ship].systems[s]
         this.ships[ship].systems[s] = level + 1
         this.ships[ship].availablePower -= used
