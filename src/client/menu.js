@@ -408,7 +408,9 @@ export class tacticalmenu extends menu {
         if (comp === 'Close') {
             return 'close'
         }
-
+        else if (comp === 'Weapons') {
+            return 'weapons'
+        }
         if (component.Type === 'shifter') {
             console.log(this.availablePower)
             if (component.Segment - component.Level <= this.availablePower) {

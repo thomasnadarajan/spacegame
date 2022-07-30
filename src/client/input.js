@@ -38,6 +38,11 @@ const highlight = (e) => {
 const menuclick = (e) => {
     game.updateMouseClick()
 }
+
+const weaponsClickListener = (e) => {
+    game.handleWeaponsClick()
+}
+
 /*
 addEventListener('resize', () => {
     console.log('gets here: resize')
@@ -50,6 +55,11 @@ const requestUserDetails = () => {
     game.addPlayer(ship)
     document.getElementById('name').style.display = 'none'
     document.getElementById('sub').style.display = 'none'
+}
+
+const weaponsDirectionListener = (e) => {
+    const newdir = Math.atan2(e.x - window.innerWidth / 2, window.innerHeight / 2 - e.y)
+    throttle(20, game.handleWeaponsMove(newdir))
 }
 
 export function activateEventListener() {
@@ -67,7 +77,10 @@ export function activateMenuListener() {
     addEventListener('mousemove', highlight)
     addEventListener('mousedown', menuclick)
 }
-
+export function enableWeaponsListeners() {
+    addEventListener('mousemove', weaponsDirectionListener)
+    addEventListener('mousedown', weaponsClickListener)
+}
 export function disableMenuListener() {
     removeEventListener('mousemove', highlight)
     removeEventListener('mousedown', menuclick)

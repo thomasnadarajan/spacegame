@@ -1,5 +1,5 @@
 import {animate} from './render'
-import { enableMouseDirection, disableMouseDirection, activateMenuListener, disableMenuListener } from './input'
+import { enableMouseDirection, disableMouseDirection, activateMenuListener, disableMenuListener, enableWeaponsListeners } from './input'
 import { menustack } from './render'
 import {transportmenu, cargomenu, tacticalmenu} from './menu'
 
@@ -13,9 +13,13 @@ export class gamemanager {
         this.animationFrameRequest = null
         this.socket = socket
         this.currentMousePosition = {x: 0, y: 0}
+        this.weaponsAngle = 0
+        this.weaponsMode = false
     }
     setCurrentState(state) {
         this.currentState = state
+        this.currentState['weaponsAngle'] = this.weaponsAngle
+        this.currentState['weaponsMode'] = this.weaponsMode
         if (this.currentState.me.playerView) {
             disableMouseDirection()
         }
@@ -41,6 +45,13 @@ export class gamemanager {
             }
         }
     }
+    handleWeaponsMove(input) {
+        this.weaponsAngle = input
+    }
+
+    handleWeaponsClick() {
+        this.socket.emit('fire', {angle: this.weaponsAngle, ship: this.currentState.me.currentShip})
+    }
     updateMouseClick() {
         const currentMenu = menustack[menustack.length - 1]
         for (const comp in currentMenu.components) {
@@ -50,6 +61,12 @@ export class gamemanager {
                 if (ret != null && ret === 'close') {
                     menustack.pop()
                     disableMenuListener()
+                }
+                else if (ret != null && ret === 'weapons') {
+                    menustack.pop()
+                    disableMenuListener()
+                    this.weaponsMode = true
+                    enableWeaponsListeners()
                 }
             }
         }
@@ -96,12 +113,14 @@ export class gamemanager {
                 player: currentMenu.selectedPlayerSend,
                 ship: currentMenu.selectedShip
             })
-
-            menustack.pop()
         }
         else {
-            console.log('receive goes here')
+            this.socket.emit('transport', {
+                player: currentMenu.selectedPlayerSend,
+                ship: currentMenu.ship
+            })
         }
+        menustack.pop()
     }
 
     // THIS IS JUST FOR TESTING

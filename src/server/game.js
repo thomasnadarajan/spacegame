@@ -1,5 +1,6 @@
 import {player} from '../shared/player'
 import {ship} from '../shared/ship'
+import {laser} from '../shared/laser'
 export class game {
     constructor() {
         this.sockets ={}
@@ -67,6 +68,17 @@ export class game {
         }
         
     }
+    handleFire(rotation, ship) {
+        const parentShip = this.ships[ship]
+        const rot = rotation + parentShip.rotation
+        const originx = parentShip.position.x
+        const originy = parentShip.position.y + 10 * parentShip.shipblock
+        const x = Math.cos(rot) * (originx - parentShip.position.x) - Math.sin(rot) * (originy - parentShip.position.y) + parentShip.position.x;
+        const y = Math.sin(rot) * (originx - parentShip.position.x) + Math.cos(rot) * (originy - parentShip.position.y) + parentShip.position.y;
+        console.log("Bullet x:", x, " Bullet y: ", y)
+        console.log("Ship x:", parentShip.position.x, " Ship y: ", parentShip.position.y)
+        this.shiplasers.push(new laser(x, y, rot, parentShip))
+    }
     handlePowerUpdate(system, level, ship) {
         const s = system.replace('Shifter', '').toLowerCase()
         const used = (level+1) - this.ships[ship].systems[s]
@@ -75,6 +87,9 @@ export class game {
     }
     update(){
         if (this.shouldSendUpdate) {
+            for (const laser of this.shiplasers) {
+                laser.update()
+            }
             Object.keys(this.sockets).forEach(playerID => {
                 const socket = this.sockets[playerID];
                 if (playerID in this.players) {
@@ -96,7 +111,7 @@ export class game {
             me: me,
             players: this.players,
             ships: this.ships,
-            shiplasers: [],
+            shiplasers: this.shiplasers,
             playerlasers: []
         }
         return update
@@ -114,7 +129,9 @@ export class game {
                     }
                 }
                 if (!found) {
+                    this.ships[p.currentShip].removePlayer(player, p.position)
                     p.moveShip(s, position.x, position.y)
+                    this.ships[s].addPlayer(player, position)
                 }
             }
             
@@ -148,16 +165,7 @@ export class game {
         }
     }
 
-    fireLaser(player, s) {
-        const p = this.players[player]
-        const laser = {
-            x: p.position.x,
-            y: p.position.y,
-            rotation: p.rotation,
-            ship: s
-        }
-        this.shiplasers.push(laser)
-    }
+
     updateLasers() {
         for (const laser of this.shiplasers) {
             if (laser.x === 0 || laser.x === 9 || laser.y === 0 || laser.y === 9) {

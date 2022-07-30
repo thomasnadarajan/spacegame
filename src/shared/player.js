@@ -36,5 +36,8 @@ export class player {
             this.position = {x: x, y: y}
         }
     }
+    togglePlayerView() {
+        this.playerView = !this.playerView
+    }
 
 }

@@ -225,6 +225,55 @@ function playerRenderPlayerMode(player, playerShip, centerShip) {
     player.width, player.height)
     c.restore()
 }
+
+function weaponsMode(playerShip, rotation) {
+    const canvasX = canvas.width / 2
+    const canvasY = canvas.height / 2 + (10 * playerShip.shipblock)
+    c.save()
+    c.translate(canvas.width / 2, canvas.height / 2)
+    c.rotate(rotation)
+    c.translate(-(canvas.width / 2), -(canvas.height / 2))
+    c.translate(canvasX, canvasY)
+    c.strokeStyle = 'red'
+    c.lineWidth = 10
+    c.beginPath()
+    c.moveTo(0, 0)
+    c.lineTo(0, 60)
+    c.stroke()
+    c.restore()
+}
+function laserRenderPlayerMode(laser, centerShip) {
+    c.save()
+    c.translate(canvas.width/2, canvas.height/2)
+    c.rotate(-1 * centerShip.rotation)
+    c.translate(-canvas.width/2, -canvas.height/2)
+    const canvasX = canvas.width / 2 + (laser.x - centerShip.position.x)
+    const canvasY = canvas.height / 2 + (laser.y - centerShip.position.y)
+    c.translate(canvasX, canvasY)
+    c.rotate(laser.totalrotation - Math.PI / 2)
+    c.strokeStyle = 'red'
+    c.lineWidth = 10
+    c.beginPath()
+    c.moveTo(0, 0)
+    c.lineTo(0, 60)
+    c.stroke()
+    c.restore()
+}
+
+function laserRenderPilotMode(laser, centerShip) {
+    c.save()
+    const canvasX = canvas.width / 2 + (laser.x - centerShip.position.x)
+    const canvasY = canvas.height / 2 + (laser.y - centerShip.position.y)
+    c.translate(canvasX, canvasY)
+    c.rotate(laser.totalrotation - Math.PI/ 2)
+    c.strokeStyle = 'red'
+    c.lineWidth = 10
+    c.beginPath()
+    c.moveTo(0, 0)
+    c.lineTo(0, 60)
+    c.stroke()
+    c.restore()
+}
 // simple function that takes in a ship, and renders using the blocks based on the ship position
 function shipDraw(ship) {
     const left_most_x = -1 * (5 * ship.shipblock)
@@ -272,6 +321,7 @@ function shipRenderPilotMode(ship, centerShip) {
     shipDraw(ship)
     c.restore()
 }
+
 // player always renders in the center of the screen
 // many test functions in here at the moment
 export function animate() {
@@ -291,6 +341,12 @@ export function animate() {
         if (menustack.length >= 1) {
             menuRender(menustack[menustack.length - 1], this)
         }
+        if (this.weaponsMode) {
+            weaponsMode(playerShip, this.weaponsAngle)
+        }
+        for (const laser of this.shiplasers) {
+            laserRenderPlayerMode(laser, playerShip)
+        }
     }
     else {
         for (const ship in this.ships) {
@@ -299,5 +355,9 @@ export function animate() {
         for (const player in this.players) {
             playerRenderPilotMode(this.players[player], this.ships[this.players[player].currentShip], playerShip)
         }
+        for (const laser of this.shiplasers) {
+            laserRenderPilotMode(laser, playerShip)
+        }
     }
+    
 }

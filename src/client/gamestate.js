@@ -8,8 +8,8 @@ export class gamestate {
         this.ships = data.ships
 
         // a list of all the lasers in flight
-        this.shiplasers = []
-        this.playerlasers = []
+        this.shiplasers = data.shiplasers
+        this.playerlasers = data.playerlasers
     }
 
 }

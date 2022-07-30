@@ -26,10 +26,20 @@ io.on('connection', socket => {
       g.handleDirectionInput(socket.id, data)
     })
     socket.on('transport', data => {
-      g.movePlayer(data.player, data.ship)
+      try{
+        g.movePlayer(data.player, data.ship)
+      }
+      catch (err) {
+        if (err.name === 'TypeError') {
+          console.log(err)
+        }
+      }
     })
     socket.on('powerUpdate', data => {
       g.handlePowerUpdate(data.system, data.level, data.ship)
+    })
+    socket.on('fire', data => {
+      g.handleFire(data.angle, data.ship)
     })
     count++
 })
