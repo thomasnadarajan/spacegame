@@ -228,17 +228,17 @@ function playerRenderPlayerMode(player, playerShip, centerShip) {
 
 function weaponsMode(playerShip, rotation) {
     const canvasX = canvas.width / 2
-    const canvasY = canvas.height / 2 + (10 * playerShip.shipblock)
+    const canvasY = canvas.height / 2 - (10 * playerShip.shipblock)
     c.save()
     c.translate(canvas.width / 2, canvas.height / 2)
     c.rotate(rotation)
     c.translate(-(canvas.width / 2), -(canvas.height / 2))
     c.translate(canvasX, canvasY)
     c.strokeStyle = 'red'
-    c.lineWidth = 10
+    c.lineWidth = 5
     c.beginPath()
     c.moveTo(0, 0)
-    c.lineTo(0, 60)
+    c.lineTo(0, 10)
     c.stroke()
     c.restore()
 }
@@ -250,12 +250,12 @@ function laserRenderPlayerMode(laser, centerShip) {
     const canvasX = canvas.width / 2 + (laser.x - centerShip.position.x)
     const canvasY = canvas.height / 2 + (laser.y - centerShip.position.y)
     c.translate(canvasX, canvasY)
-    c.rotate(laser.totalrotation - Math.PI / 2)
+    c.rotate(laser.totalrotation)
     c.strokeStyle = 'red'
-    c.lineWidth = 10
+    c.lineWidth = 5
     c.beginPath()
     c.moveTo(0, 0)
-    c.lineTo(0, 60)
+    c.lineTo(0, 10)
     c.stroke()
     c.restore()
 }
@@ -265,12 +265,12 @@ function laserRenderPilotMode(laser, centerShip) {
     const canvasX = canvas.width / 2 + (laser.x - centerShip.position.x)
     const canvasY = canvas.height / 2 + (laser.y - centerShip.position.y)
     c.translate(canvasX, canvasY)
-    c.rotate(laser.totalrotation - Math.PI/ 2)
+    c.rotate(laser.totalrotation)
     c.strokeStyle = 'red'
-    c.lineWidth = 10
+    c.lineWidth = 5
     c.beginPath()
     c.moveTo(0, 0)
-    c.lineTo(0, 60)
+    c.lineTo(0, 10)
     c.stroke()
     c.restore()
 }
