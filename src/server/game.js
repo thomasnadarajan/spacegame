@@ -31,6 +31,8 @@ export class game {
             this.ships[ship_id].addPlayer(socket.id, this.players[socket.id].position)
             const ship_id2 = Math.floor(1000 + Math.random() * 9000)
             this.ships[ship_id2] = new ship(x + 450, y, ship_id2)
+            //console.log(ship_id, ": ", this.ships[ship_id].position.x)
+            //console.log(ship_id2, ": ", this.ships[ship_id2].position.x - (this.ships[ship_id2].shipblock * 5))
         }
         else {
             for (let i = 0; i < 10; i++) {

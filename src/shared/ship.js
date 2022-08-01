@@ -34,9 +34,9 @@ export class ship {
     static type = grid_types
     constructor(x, y, id) {
         this.id = id
-        // this is the top left position of the ship
+        // this is the center position of the ship
         this.position = {x: x, y: y}
-        // shipblock will be scaled at render time
+        // shipblock will be scaled at render time - add an argument to the constructor for scale
         this.shipblock = 25
         // this is the rotation relative to the rest of the world
         this.rotation = 0
