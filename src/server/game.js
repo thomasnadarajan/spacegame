@@ -30,9 +30,8 @@ export class game {
             this.players[socket.id] = new player(player_user, ship_id, 1, 2)
             this.ships[ship_id].addPlayer(socket.id, this.players[socket.id].position)
             const ship_id2 = Math.floor(1000 + Math.random() * 9000)
-            this.ships[ship_id2] = new ship(x + 450, y, ship_id2)
-            //console.log(ship_id, ": ", this.ships[ship_id].position.x)
-            //console.log(ship_id2, ": ", this.ships[ship_id2].position.x - (this.ships[ship_id2].shipblock * 5))
+            this.ships[ship_id2] = new ship(x + 575, y, ship_id2)
+            console.log(ship_id2, ": ", this.ships[ship_id2].position.x - (5 * this.ships[ship_id2].shipblock))
         }
         else {
             for (let i = 0; i < 10; i++) {
@@ -81,7 +80,7 @@ export class game {
         const x = Math.cos(rot) * (originx - parentShip.position.x) - Math.sin(rot) * (originy - parentShip.position.y) + parentShip.position.x;
         const y = Math.sin(rot) * (originx - parentShip.position.x) + Math.cos(rot) * (originy - parentShip.position.y) + parentShip.position.y;
         //console.log("Bullet x:", x, " Bullet y: ", y)
-        //console.log(parentShip.id, "x: ", parentShip.position.x, " y: ", parentShip.position.y)
+        //console.log(parentShip.id, "x: ", parentShip.position.x - 5 * parentShip.shipblock, " y: ", parentShip.position.y - 5 * parentShip.shipblock)
         this.shiplasers.push(new laser(x, y, rot, parentShip))
     }
     handlePowerUpdate(system, level, ship) {

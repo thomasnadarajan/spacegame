@@ -8,7 +8,7 @@ export class laser {
         //this.totalrotation = rotation + Math.PI / 2
         this.totalrotation = rotation
         this.ship = ship.id
-        this.length = 10
+        this.radius = 5
     }
     update() {
         this.x += Math.sin(this.totalrotation)

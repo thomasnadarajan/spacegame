@@ -53,6 +53,7 @@ export class ship {
         }
         // will normally be 0 but just temp moved up to 12 just to demonstrate menu functionality
         this.cargo = 12
+        this.radius = sqrt(2 * Math.pow(5 * this.shipblock, 2))
         //this.addPlayer(player, player.position)
     }
     setRotation(deg) {

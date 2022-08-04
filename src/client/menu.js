@@ -1,4 +1,4 @@
-import {distanceCalc} from './gamemanager.js'
+import {distanceCalc} from '../shared/distance'
 import {game} from './index'
 import {ship} from '../shared/ship.js'
 export class menu {

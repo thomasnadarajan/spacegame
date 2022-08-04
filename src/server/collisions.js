@@ -5,6 +5,7 @@ function get_opposite(angle, length, x, y) {
 }
 const bullets = {}
 function overlap(l1, l2) {
+    
     if (!(l2.totalrotation in bullets)) {
         console.log("Ship: ", l1, "Laser: ", l2)
         bullets[l2.totalrotation] = l2
@@ -15,8 +16,10 @@ function overlap(l1, l2) {
 
 function collide(ship1, ship2 = null, laser = null) {
     var ship1_coords = []
-    var last_angle = -1* ship1.rotation
-    ship1_coords.push(ship1.position)
+    var last_angle = ship1.rotation - Math.PI
+    const test_new = get_opposite(ship1.rotation - (Math.PI/4), Math.sqrt(250), ship1.position.x, ship1.position.y)
+    const new_position = {x: ship1.position.x - 5 * ship1.shipblock, y: ship1.position.y - 5 * ship1.shipblock}
+    ship1_coords.push(test_new)
     for (let i = 1; i <= 3; i++) {
         if (i == 0) {
             ship1_coords.push(get_opposite(last_angle, 10 * ship1.shipblock, ship1_coords[0].x, ship1_coords[0].y))
@@ -32,12 +35,13 @@ function collide(ship1, ship2 = null, laser = null) {
     const miny1 = Math.min(...ship1_coords.map(x => x.y))
     const maxy1 = Math.max(...ship1_coords.map(x => x.y))
     const l1 = {x: minx1, y: miny1, width: maxx1 - minx1, height: maxy1 - miny1, id: ship1.id}
-    
+    // TODO FIX FOR ship2
     if (ship2 !== null) {
-        // the top most corner is   rotated about the middle of the 
         var ship2_coords = []
-        last_angle = -1* ship2.rotation
-        ship2_coords.push(ship2.position)
+        last_angle = ship2.rotation - Math.PI
+        // fix this to correct for angle
+        const new_position_ship2 = {x: ship2.position.x - 5 * ship2.shipblock, y: ship2.position.y - 5 * ship2.shipblock}
+        ship2_coords.push(new_position_ship2)
         for (let i = 1; i <= 3; i++) {
             if (i === 1) {
                 ship2_coords.push(get_opposite(last_angle, 10 * ship1.shipblock, ship2_coords[0].x, ship2_coords[0].y))
@@ -88,7 +92,6 @@ export function checkCollisions(lasers, ships) {
         for (const ship in ships) {
             if (laser.ship !== ships[ship].id) {
                 if (collide(ships[ship], null, laser)) {
-                    console.log('COLLIDED')
                     return true
                 }
             }
