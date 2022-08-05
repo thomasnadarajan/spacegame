@@ -2,6 +2,7 @@ import {player} from '../shared/player'
 import {ship} from '../shared/ship'
 import {laser} from '../shared/laser'
 import { checkCollisions } from './collisions'
+import { circleCollision } from './circlecol'
 export class game {
     constructor() {
         this.sockets ={}
@@ -94,12 +95,26 @@ export class game {
             for (const laser of this.shiplasers) {
                 laser.update()
             }
-            checkCollisions(this.shiplasers, this.ships)
+            for (const laser of this.shiplasers) {
+                for (const ship in this.ships) {
+                    if (laser.ship !== this.ships[ship].id) {
+                        if (circleCollision(this.ships[ship], null, laser)) {
+                            this.ships[ship].hit()
+                            laser.setDestroyed()
+                        }
+                    }
+                }
+            }
+            this.shiplasers = this.shiplasers.filter(laser => !laser.destroyed)
+            for (const ship in this.ships) {
+                this.ships[ship].update()
+            }
             Object.keys(this.sockets).forEach(playerID => {
                 const socket = this.sockets[playerID];
                 if (playerID in this.players) {
                     //this.players[playerID].update()
                     const player = this.players[playerID];
+                    this.ships[player.currentShip].hit()
                     socket.emit('update', this.generateGameUpdate(player));
                 }
                 else {
@@ -167,19 +182,6 @@ export class game {
         const p = this.players[player]
         if (p.position.x === 1 && p.position.y === 2) {
             p.togglePlayerView()
-        }
-    }
-
-
-    updateLasers() {
-        for (const laser of this.shiplasers) {
-            if (laser.x === 0 || laser.x === 9 || laser.y === 0 || laser.y === 9) {
-                this.shiplasers.splice(this.shiplasers.indexOf(laser), 1)
-            }
-            else {
-                laser.x += Math.cos(laser.rotation)
-                laser.y += Math.sin(laser.rotation)
-            }
         }
     }
 }

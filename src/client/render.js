@@ -1,3 +1,4 @@
+import { laser } from '../shared/laser';
 import { ship_mats } from './asset'
 import ship_map from './assets/tilemap-editor.json'
 
@@ -233,12 +234,13 @@ function weaponsMode(playerShip, rotation) {
     c.translate(canvas.width / 2, canvas.height / 2)
     c.rotate(rotation)
     c.translate(-(canvas.width / 2), -(canvas.height / 2))
-    c.translate(canvasX, canvasY)
-    c.strokeStyle = 'red'
-    c.lineWidth = 5
+    c.translate(canvasX, canvasY)    
     c.beginPath()
-    c.moveTo(0, 0)
-    c.lineTo(0, 10)
+    c.fillStyle = 'red'
+    c.strokeStyle = 'white'
+    c.lineWidth = 1/4 * laser.radius
+    c.arc(0,0,laser.radius * 3/4,0, 2* Math.PI)
+    c.fill()
     c.stroke()
     c.restore()
 }
@@ -251,11 +253,12 @@ function laserRenderPlayerMode(laser, centerShip) {
     const canvasY = canvas.height / 2 + (laser.y - centerShip.position.y)
     c.translate(canvasX, canvasY)
     c.rotate(laser.totalrotation)
-    c.strokeStyle = 'red'
-    c.lineWidth = 5
     c.beginPath()
-    c.moveTo(0, 0)
-    c.lineTo(0, 10)
+    c.fillStyle = 'red'
+    c.strokeStyle = 'white'
+    c.lineWidth = 1/4 * laser.radius
+    c.arc(0,0,laser.radius * 3/4,0, 2* Math.PI)
+    c.fill()
     c.stroke()
     c.restore()
 }
@@ -266,11 +269,12 @@ function laserRenderPilotMode(laser, centerShip) {
     const canvasY = canvas.height / 2 + (laser.y - centerShip.position.y)
     c.translate(canvasX, canvasY)
     c.rotate(laser.totalrotation)
-    c.strokeStyle = 'red'
-    c.lineWidth = 5
     c.beginPath()
-    c.moveTo(0, 0)
-    c.lineTo(0, 10)
+    c.fillStyle = 'red'
+    c.strokeStyle = 'white'
+    c.lineWidth = 1/4 * laser.radius
+    c.arc(0,0,laser.radius * 3/4,0, 2* Math.PI)
+    c.fill()
     c.stroke()
     c.restore()
 }
@@ -306,6 +310,10 @@ function shipRenderPlayerMode(ship, centerShip) {
     if (ship.position.x - centerShip.position.x !== 0 || ship.position.y - centerShip.position.y !== 0) {
         c.rotate(ship.rotation)
     }
+    c.beginPath()
+    c.fillStyle = 'yellow'
+    c.arc(0,0,ship.radius,0, 2* Math.PI)
+    c.fill()
     shipDraw(ship)
     c.restore()
 }
@@ -318,10 +326,19 @@ function shipRenderPilotMode(ship, centerShip) {
     c.save()
     c.translate(canvasX, canvasY)
     c.rotate(ship.rotation)
+    c.beginPath()
+    c.fillStyle = 'yellow'
+    c.arc(0,0,ship.radius,0, 2* Math.PI)
+    c.fill()
     shipDraw(ship)
     c.restore()
 }
-
+function shieldsDown() {
+    c.textAlign = 'center'
+    c.font = "120px Antonio"
+    c.fillStyle = 'red'
+    c.fillText('Shields Down!', canvas.width/2, canvas.height/2)
+}
 // player always renders in the center of the screen
 // many test functions in here at the moment
 export function animate() {
@@ -346,6 +363,9 @@ export function animate() {
         }
         for (const laser of this.shiplasers) {
             laserRenderPlayerMode(laser, playerShip)
+        }
+        if (playerShip.shieldsDownBurn > 0) {
+            shieldsDown()
         }
     }
     else {

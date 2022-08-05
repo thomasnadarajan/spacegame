@@ -40,11 +40,13 @@ export class ship {
         this.shipblock = 25
         // this is the rotation relative to the rest of the world
         this.rotation = 0
-        
         this.players = []
         this.moving = false
         this.availablePower = 2
         this.systems = {shields: 1, engines: 1, weapons: 1}
+        //this.shield = this.systems.shields * 5
+        this.shield = 1
+        this.hull = 100
         this.playerGrid = ship.grid.map((arr) => {return arr.slice()})
         for (let i = 0; i < 10; i++) {
             for (let j = 0; j < 10; j++) {
@@ -53,7 +55,9 @@ export class ship {
         }
         // will normally be 0 but just temp moved up to 12 just to demonstrate menu functionality
         this.cargo = 12
-        this.radius = sqrt(2 * Math.pow(5 * this.shipblock, 2))
+        this.radius = Math.sqrt(2 * Math.pow(5 * this.shipblock, 2))
+
+        this.shieldsDownBurn = 0
         //this.addPlayer(player, player.position)
     }
     setRotation(deg) {
@@ -68,9 +72,23 @@ export class ship {
         this.playerGrid[position.x][position.y] = 0
     }
     update() {
+        if (this.shieldsDownBurn > 0) {
+            this.shieldsDownBurn--
+        }
         if (this.moving && this.player) {
             this.position.x += 2 * Math.sin(this.rotation) * this.systems.engines / 2
             this.position.y -= 2 * Math.cos(this.rotation) * this.systems.engines / 2
+        }
+    }
+    hit() {
+        if (this.shield > 0) {
+            this.shield--
+            if (this.shield === 0) {
+                this.shieldsDownBurn = 40
+            }
+        }
+        else  {
+            this.hull -= 2
         }
     }
 }

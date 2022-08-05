@@ -1,4 +1,5 @@
 export class laser {
+    static radius = 20
     constructor(x, y, rotation, ship) {
         this.x = x
         this.y = y
@@ -8,10 +9,16 @@ export class laser {
         //this.totalrotation = rotation + Math.PI / 2
         this.totalrotation = rotation
         this.ship = ship.id
-        this.radius = 5
+        this.radius = laser.radius
+        this.position = {x: x, y: y}
+        this.destroyed = false
     }
     update() {
         this.x += Math.sin(this.totalrotation)
         this.y -= Math.cos(this.totalrotation)
+        this.position = {x: this.x, y: this.y}
+    }
+    setDestroyed() {
+        this.destroyed = true
     }
 }
