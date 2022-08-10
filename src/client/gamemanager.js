@@ -119,15 +119,14 @@ export class gamemanager {
         menustack.pop()
     }
 
-    // THIS IS JUST FOR TESTING
-    addPlayer(ship, username = null) {
-        if (username === null) {
+    addPlayer(user, pair) {
+        if (pair === null) {
             if (ship === '') {
-                this.socket.emit('addPlayer', {s: null})
+                this.socket.emit('addPlayer', {u: user, s: null})
             }
-            else {
-                this.socket.emit('addPlayer', {s: ship})
-            }
+        }
+        else {
+            this.socket.emit('addPlayer', {u: user, s: pair})
         }
     }
 }

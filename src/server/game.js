@@ -1,7 +1,6 @@
 import {player} from '../shared/player'
 import {ship} from '../shared/ship'
 import {laser} from '../shared/laser'
-import { checkCollisions } from './collisions'
 import { circleCollision } from './circlecol'
 export class game {
     constructor() {

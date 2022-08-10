@@ -44,8 +44,7 @@ export class ship {
         this.moving = false
         this.availablePower = 2
         this.systems = {shields: 1, engines: 1, weapons: 1}
-        //this.shield = this.systems.shields * 5
-        this.shield = 1
+        this.shield = this.systems.shields * 5
         this.hull = 100
         this.playerGrid = ship.grid.map((arr) => {return arr.slice()})
         for (let i = 0; i < 10; i++) {

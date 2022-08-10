@@ -51,10 +51,12 @@ addEventListener('resize', () => {
 */
 
 const requestUserDetails = () => {
-    const ship = document.getElementById('name').value
-    game.addPlayer(ship)
-    document.getElementById('name').style.display = 'none'
-    document.getElementById('sub').style.display = 'none'
+    
+    const user = document.getElementById('username-input').value
+    const pair = document.getElementById('pair-input').value
+    game.addPlayer(user, pair)
+    document.getElementById('play-menu').classList.add("hidden")
+    document.getElementById('game').classList.remove("hidden")
 }
 
 const weaponsDirectionListener = (e) => {
@@ -65,7 +67,7 @@ const weaponsDirectionListener = (e) => {
 export function activateEventListener() {
     //addEventListener('mousemove', mouseMove)
     addEventListener('keydown', directionIn)
-    document.getElementById('sub').addEventListener('click', requestUserDetails)
+    document.getElementById('play-button').addEventListener('click', requestUserDetails)
 }
 export function disableMouseDirection() {
     removeEventListener('mousemove', mouseMove)

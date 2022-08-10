@@ -17,7 +17,7 @@ console.log('server running!')
 io.on('connection', socket => {
     g.addConnection(socket)
     socket.on('addPlayer', (data) => {
-      g.addPlayer(socket, 'test'.concat(count.toString()), data.s)
+      g.addPlayer(socket, data.u, data.s)
     })
     socket.on('mouseInput', data => {
       g.setShipDirection(g.players[socket.id], data)
