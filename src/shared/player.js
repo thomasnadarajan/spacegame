@@ -1,7 +1,7 @@
 import {ship} from '../shared/ship'
 
 export class player {
-    constructor(user, parentShip, x, y) {
+    constructor(user, parentShip, x, y, pair) {
 
         this.user = user
         // this will ultimately just store the id for the ship from which the player originates
@@ -21,6 +21,7 @@ export class player {
 
         // this rotation is relative to an upwards facing ship
         this.rotation = 0
+        this.pair = pair
     }
     
     moveShip(shipid, x, y) {

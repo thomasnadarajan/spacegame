@@ -7,6 +7,7 @@ export class game {
         this.sockets ={}
         this.players = {}
         this.keys = {}
+        this.pairs = {}
         // a list of all the ships in the game
         this.ships = {}
 
@@ -27,17 +28,23 @@ export class game {
             const y = 5000 * (0.25 + Math.random() * 0.5)
             const ship_id = Math.floor(1000 + Math.random() * 9000)
             this.ships[ship_id] = new ship(x, y, ship_id)
-            this.players[socket.id] = new player(player_user, ship_id, 1, 2)
+            const code = Math.floor(1000 + Math.random() * 9000)
+            this.pairs[code] = {ship: ship_id, players: [socket.id]}
+            this.players[socket.id] = new player(player_user, ship_id, 1, 2, code)
             this.ships[ship_id].addPlayer(socket.id, this.players[socket.id].position)
             const ship_id2 = Math.floor(1000 + Math.random() * 9000)
             this.ships[ship_id2] = new ship(x + 575, y, ship_id2)
+            
         }
         else {
+            // Eventually we will do type checking/cleansing client side.
+            const pair_proper = parseInt(pair)
+            const parentShip = this.ships[this.pairs[pair_proper].ship]
             for (let i = 0; i < 10; i++) {
-                for (let j = 0; j < 10; j++) {
-                    if (ship.grid[i][j] === 1 && this.ships[pair].playerGrid[i][j] === 0) {
-                        this.players[socket.id] = new player(player_user, pair, i, j)
-                        this.ships[pair].addPlayer(socket.id, this.players[socket.id].position)
+                for (let j = 0; j < 10; j++) { 
+                    if (ship.grid[i][j] === 1 && parentShip.playerGrid[i][j] === 0) {
+                        this.players[socket.id] = new player(player_user, parentShip.id, i, j, pair_proper)
+                        parentShip.addPlayer(socket.id, this.players[socket.id].position)
                         this.keys[socket.id] = {
                             left: false,
                             right: false,

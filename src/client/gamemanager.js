@@ -114,7 +114,6 @@ export class gamemanager {
                 ship: currentMenu.ship
             })
         }
-        menustack.pop()
     }
 
     addPlayer(user, pair) {

@@ -339,6 +339,13 @@ function shieldsDown() {
     c.fillStyle = 'red'
     c.fillText('-Shields Down!-', canvas.width/2, canvas.height / 2 - canvas.height / 4 - canvas.height / 8)
 }
+
+function drawPairCode(pairCode) {
+    c.textAlign = 'left'
+    c.font = "24px Antonio"
+    c.fillStyle = 'gray'
+    c.fillText('Pair Code: '.concat(pairCode.toString()), canvas.width - canvas.width / 8, canvas.height / 8)
+}
 // player always renders in the center of the screen
 // many test functions in here at the moment
 export function animate() {
@@ -379,5 +386,5 @@ export function animate() {
             laserRenderPilotMode(laser, playerShip)
         }
     }
-    
+    drawPairCode(this.me.pair)
 }

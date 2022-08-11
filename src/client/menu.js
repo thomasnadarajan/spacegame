@@ -283,13 +283,14 @@ export class transportmenu extends menu {
             this.mode = this.mode === 'send' ? 'retrieve' : 'send'
             for (const comp in this.components) {
                 if (comp === 'Destination') {
-                    this.components[comp].Alternative = true
+                    this.components[comp].Alternative = !this.components[comp].Alternative
                 }
             }
             return null
         }
         else if (comp === 'Transport') {
             game.handleTransportRequest()
+            return 'close'
         }
 
         if (component.Type === 'buttonList') {
