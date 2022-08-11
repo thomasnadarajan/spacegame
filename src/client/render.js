@@ -93,7 +93,7 @@ function renderMenuHeader(menu) {
     c.fillStyle = '#cc2233'
     c.roundRect(menu.topBoundHoriz, menu.topBoundVert, menu.width, menu.headerHeight, 15).fill()
     c.font = menu.headerFontSize.concat("px Antonio")
-    c.fillStyle = 'black'
+    c.fillStyle = 'white'
     c.textAlign = 'left'
     c.fillText(menu.heading, menu.topBoundHoriz * 1.1, menu.topBoundVert + 0.8 * menu.headerHeight)
 }
@@ -311,7 +311,7 @@ function shipRenderPlayerMode(ship, centerShip) {
         c.rotate(ship.rotation)
     }
     c.beginPath()
-    c.fillStyle = 'yellow'
+    c.fillStyle = 'rgba(31, 29, 43, 1.0)'
     c.arc(0,0,ship.radius,0, 2* Math.PI)
     c.fill()
     shipDraw(ship)
@@ -327,7 +327,7 @@ function shipRenderPilotMode(ship, centerShip) {
     c.translate(canvasX, canvasY)
     c.rotate(ship.rotation)
     c.beginPath()
-    c.fillStyle = 'yellow'
+    c.fillStyle = 'rgba(31, 29, 43, 1.0)'
     c.arc(0,0,ship.radius,0, 2* Math.PI)
     c.fill()
     shipDraw(ship)
@@ -335,9 +335,9 @@ function shipRenderPilotMode(ship, centerShip) {
 }
 function shieldsDown() {
     c.textAlign = 'center'
-    c.font = "120px Antonio"
+    c.font = "64px Antonio"
     c.fillStyle = 'red'
-    c.fillText('Shields Down!', canvas.width/2, canvas.height/2)
+    c.fillText('-Shields Down!-', canvas.width/2, canvas.height / 2 - canvas.height / 4 - canvas.height / 8)
 }
 // player always renders in the center of the screen
 // many test functions in here at the moment

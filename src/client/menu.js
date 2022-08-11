@@ -248,7 +248,6 @@ export class transportmenu extends menu {
             found = false
 
             for (const player of myShip.players) {
-                console.log(player)
                 for (const position of ship.type['transport']) {
                     if (position.x === data.players[player].position.x && position.y === data.players[player].position.y) {
                         if (this.selectedPlayer === data.players[player].user) {
@@ -412,7 +411,6 @@ export class tacticalmenu extends menu {
             return 'weapons'
         }
         if (component.Type === 'shifter') {
-            console.log(this.availablePower)
             if (component.Segment - component.Level <= this.availablePower) {
                 this.components[comp].Level = component.Segment
                 game.handlePowerUpdate(comp, this.components[comp].Level, this.ship)

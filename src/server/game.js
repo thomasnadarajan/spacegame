@@ -31,7 +31,6 @@ export class game {
             this.ships[ship_id].addPlayer(socket.id, this.players[socket.id].position)
             const ship_id2 = Math.floor(1000 + Math.random() * 9000)
             this.ships[ship_id2] = new ship(x + 575, y, ship_id2)
-            console.log(ship_id2, ": ", this.ships[ship_id2].position.x - (5 * this.ships[ship_id2].shipblock))
         }
         else {
             for (let i = 0; i < 10; i++) {
@@ -98,7 +97,7 @@ export class game {
                 for (const ship in this.ships) {
                     if (laser.ship !== this.ships[ship].id) {
                         if (circleCollision(this.ships[ship], null, laser)) {
-                            this.ships[ship].hit()
+                            this.ships[ship].hit(laser)
                             laser.setDestroyed()
                         }
                     }
@@ -113,7 +112,6 @@ export class game {
                 if (playerID in this.players) {
                     //this.players[playerID].update()
                     const player = this.players[playerID];
-                    this.ships[player.currentShip].hit()
                     socket.emit('update', this.generateGameUpdate(player));
                 }
                 else {
@@ -181,6 +179,7 @@ export class game {
         const p = this.players[player]
         if (p.position.x === 1 && p.position.y === 2) {
             p.togglePlayerView()
+            this.ships[p.currentShip].moving = !this.ships[p.currentShip].moving
         }
     }
 }

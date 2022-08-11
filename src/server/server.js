@@ -7,8 +7,6 @@ const app = express()
 const httpServer = createServer(app)
 const io = new Server(httpServer)
 const g = new game()
-// this is just a temp counting thing, before we have frontend username entry
-var count = 0
 app.get('/', (req, res) => {
     res.send(window.location);
   });
@@ -41,7 +39,6 @@ io.on('connection', socket => {
     socket.on('fire', data => {
       g.handleFire(data.angle, data.ship)
     })
-    count++
 })
 httpServer.listen(3000)
 

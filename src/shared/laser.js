@@ -12,6 +12,7 @@ export class laser {
         this.radius = laser.radius
         this.position = {x: x, y: y}
         this.destroyed = false
+        this.power = ship.systems.weapons
     }
     update() {
         this.x += Math.sin(this.totalrotation)

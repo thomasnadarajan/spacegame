@@ -89,14 +89,12 @@ export class gamemanager {
                 activateMenuListener()
             }
             else if (this.currentState.me.position.x === 3 && this.currentState.me.position.y === 6) {
-                console.log('cargo')
                 menustack.push(new cargomenu(this.currentState.me.currentShip))
                 activateMenuListener()
             }
             else {
                 this.socket.emit('keyInput', input)
             }
-            
         }
         else {
             this.socket.emit('keyInput', input)
@@ -121,9 +119,7 @@ export class gamemanager {
 
     addPlayer(user, pair) {
         if (pair === null) {
-            if (ship === '') {
-                this.socket.emit('addPlayer', {u: user, s: null})
-            }
+            this.socket.emit('addPlayer', {u: user, s: null})
         }
         else {
             this.socket.emit('addPlayer', {u: user, s: pair})

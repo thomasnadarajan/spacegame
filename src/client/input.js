@@ -1,5 +1,7 @@
 import {game} from './index'
 import {throttle} from 'throttle-debounce'
+
+
 const mouseMove = (e) => {
     const newdir = Math.atan2(e.x - window.innerWidth / 2, window.innerHeight / 2 - e.y)
     throttle(20, game.handleMouseInput(newdir))
@@ -50,13 +52,19 @@ addEventListener('resize', () => {
 })
 */
 
-const requestUserDetails = () => {
+export const requestUserDetails = () => {
     
     const user = document.getElementById('username-input').value
     const pair = document.getElementById('pair-input').value
-    game.addPlayer(user, pair)
+    if (pair === '') {
+        game.addPlayer(user, null)
+    }
+    else {
+        game.addPlayer(user, pair)
+    }
     document.getElementById('play-menu').classList.add("hidden")
     document.getElementById('game').classList.remove("hidden")
+    activatePlayerListener()
 }
 
 const weaponsDirectionListener = (e) => {
@@ -64,10 +72,11 @@ const weaponsDirectionListener = (e) => {
     throttle(20, game.handleWeaponsMove(newdir))
 }
 
-export function activateEventListener() {
-    //addEventListener('mousemove', mouseMove)
+export function activatePlayerListener() {
     addEventListener('keydown', directionIn)
-    document.getElementById('play-button').addEventListener('click', requestUserDetails)
+}
+export function disablePlayerListener() {
+    removeEventListener('keydown', directionIn)
 }
 export function disableMouseDirection() {
     removeEventListener('mousemove', mouseMove)
@@ -78,6 +87,7 @@ export function enableMouseDirection() {
 export function activateMenuListener() {
     addEventListener('mousemove', highlight)
     addEventListener('mousedown', menuclick)
+    removeEventListener('keydown', directionIn)
 }
 export function enableWeaponsListeners() {
     addEventListener('mousemove', weaponsDirectionListener)
@@ -86,4 +96,5 @@ export function enableWeaponsListeners() {
 export function disableMenuListener() {
     removeEventListener('mousemove', highlight)
     removeEventListener('mousedown', menuclick)
+    addEventListener('keydown', directionIn)
 }
