@@ -11,16 +11,16 @@ const mouseMove = (e) => {
 const directionIn = ({key}) => {
     switch (key) {
         case 'w':
-            game.handleKeyInput('up')
+            throttle(40,game.handleKeyInput('up'))
             break
         case 'a':
-            game.handleKeyInput('left')
+            throttle(40,game.handleKeyInput('left'))
             break
         case 's':
-            game.handleKeyInput('down')
+            throttle(40,game.handleKeyInput('down'))
             break
         case 'd':
-            game.handleKeyInput('right')
+            throttle(40,game.handleKeyInput('right'))
             break
         case 'q':
             game.handleKeyInput('use')

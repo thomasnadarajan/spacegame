@@ -45,7 +45,7 @@ export class ship {
         // this is the center position of the ship
         this.position = {x: x, y: y}
         // shipblock will be scaled at render time - add an argument to the constructor for scale
-        this.shipblock = 25
+        this.shipblock = 40
         // this is the rotation relative to the rest of the world
         this.rotation = 0
         this.players = []

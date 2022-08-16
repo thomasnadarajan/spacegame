@@ -7,3 +7,4 @@ function loadImage(filename) {
 }
 
 export const ship_mats = loadImage('./assets/scifitiles-sheet.png')
+export const player_mats = loadImage('./assets/charac.png')

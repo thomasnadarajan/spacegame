@@ -15,8 +15,8 @@ export class laser {
         this.power = ship.systems.weapons
     }
     update() {
-        this.x += Math.sin(this.totalrotation)
-        this.y -= Math.cos(this.totalrotation)
+        this.x += 2 * Math.sin(this.totalrotation)
+        this.y -= 2* Math.cos(this.totalrotation)
         this.position = {x: this.x, y: this.y}
     }
     setDestroyed() {

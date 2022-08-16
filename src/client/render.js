@@ -1,5 +1,5 @@
 import { laser } from '../shared/laser';
-import { ship_mats } from './asset'
+import { ship_mats, player_mats } from './asset'
 import ship_map from './assets/tilemap-editor.json'
 
 CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
@@ -201,8 +201,10 @@ function playerRenderPilotMode(player, playerShip, centerShip) {
     c.translate(canvasX, canvasY)
     c.rotate(playerShip.rotation)
     c.fillStyle = 'black'
-    c.fillRect(-player.width / 2 + (player.position.x * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, -player.height / 2 + (player.position.y * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, 
-    player.width, player.height)
+    c.drawImage(player_mats, 16 + (player.animation * 64), 15 + (player.direction * 64), 32, 46, -(5 * playerShip.shipblock) + player.worldPosition.x, -(5 * playerShip.shipblock) + player.worldPosition.y, player.width, player.height)
+    //c.drawImage(player_mats, 16 , 15, 32, 46, -player.width / 2 + (player.position.x * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, -player.height / 2 + (player.position.y * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, player.width, player.height)
+    //c.fillRect(-player.width / 2 + (player.position.x * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, -player.height / 2 + (player.position.y * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, 
+    //player.width, player.height)
     c.restore()
 }
 function playerRenderPlayerMode(player, playerShip, centerShip) {
@@ -222,8 +224,10 @@ function playerRenderPlayerMode(player, playerShip, centerShip) {
         c.rotate(playerShip.rotation)
     }
     c.fillStyle = 'black'
-    c.fillRect(-player.width / 2 + (player.position.x * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, -player.height / 2 + (player.position.y * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, 
-    player.width, player.height)
+    c.drawImage(player_mats, 16 + (player.animation * 64), 15 + (player.direction * 64), 32, 46, -(5 * playerShip.shipblock) + player.worldPosition.x, -(5 * playerShip.shipblock) + player.worldPosition.y, player.width, player.height)
+    //c.drawImage(player_mats, 16 , 15, 32, 46, -player.width / 2 + (player.position.x * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, -player.height / 2 + (player.position.y * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, player.width, player.height)
+    //c.fillRect(-player.width / 2 + (player.position.x * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, -player.height / 2 + (player.position.y * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, 
+    //player.width, player.height)
     c.restore()
 }
 

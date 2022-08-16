@@ -30,10 +30,10 @@ export class game {
             this.ships[ship_id] = new ship(x, y, ship_id)
             const code = Math.floor(1000 + Math.random() * 9000)
             this.pairs[code] = {ship: ship_id, players: [socket.id]}
-            this.players[socket.id] = new player(player_user, ship_id, 1, 2, code)
+            this.players[socket.id] = new player(player_user, this.ships[ship_id], 1, 2, code)
             this.ships[ship_id].addPlayer(socket.id, this.players[socket.id].position)
-            const ship_id2 = Math.floor(1000 + Math.random() * 9000)
-            this.ships[ship_id2] = new ship(x + 575, y, ship_id2)
+            //const ship_id2 = Math.floor(1000 + Math.random() * 9000)
+            //this.ships[ship_id2] = new ship(x + 575, y, ship_id2)
             
         }
         else {
@@ -43,7 +43,7 @@ export class game {
             for (let i = 0; i < 10; i++) {
                 for (let j = 0; j < 10; j++) { 
                     if (ship.grid[i][j] === 1 && parentShip.playerGrid[i][j] === 0) {
-                        this.players[socket.id] = new player(player_user, parentShip.id, i, j, pair_proper)
+                        this.players[socket.id] = new player(player_user, parentShip, i, j, pair_proper)
                         parentShip.addPlayer(socket.id, this.players[socket.id].position)
                         this.keys[socket.id] = {
                             left: false,
@@ -162,22 +162,51 @@ export class game {
         }
         else {
             if (this.keys[player].left) {
-                p.movePlayer(p.position.x - 1, p.position.y, this.ships[p.currentShip])
+                p.movePlayer(p.worldPosition.x - 5, p.worldPosition.y, this.ships[p.currentShip])
+                if (p.direction === 1) {
+                    p.animation = p.animation < 8 ? p.animation + 1 : 0
+                }
+                else {
+                    p.direction = 1
+                    p.animation = 0
+                }
                 this.keys[player].left = false
             }
 
             else if (this.keys[player].right) {
-                p.movePlayer(p.position.x + 1, p.position.y, this.ships[p.currentShip])
+                p.movePlayer(p.worldPosition.x + 5, p.worldPosition.y, this.ships[p.currentShip])
+                if (p.direction === 3) {
+                    p.animation = p.animation < 8 ? p.animation + 1 : 0
+                }
+                else {
+                    p.direction = 3
+                    p.animation = 0
+                }
                 this.keys[player].right = false
             }
 
             else if (this.keys[player].up) {
-                p.movePlayer(p.position.x, p.position.y - 1, this.ships[p.currentShip])
+                p.movePlayer(p.worldPosition.x, p.worldPosition.y - 5, this.ships[p.currentShip])
+                
+                if (p.direction === 0) {
+                    p.animation = p.animation < 8 ? p.animation + 1 : 0
+                }
+                else {
+                    p.direction = 0
+                    p.animation = 0
+                }
                 this.keys[player].up = false
             }
 
             else if (this.keys[player].down) {
-                p.movePlayer(p.position.x, p.position.y + 1, this.ships[p.currentShip])
+                p.movePlayer(p.worldPosition.x, p.worldPosition.y + 5, this.ships[p.currentShip])
+                if (p.direction === 2) {
+                    p.animation = p.animation < 8 ? p.animation + 1 : 0
+                }
+                else {
+                    p.direction = 2
+                    p.animation = 0
+                }
                 this.keys[player].down = false
             }
         }
