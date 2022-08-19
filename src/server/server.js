@@ -39,6 +39,10 @@ io.on('connection', socket => {
     socket.on('fire', data => {
       g.handleFire(data.angle, data.ship)
     })
+    socket.on('playerWeaponsDirection', data => {
+      g.handlePlayerDirection(socket.id, data)
+    })
+    socket.on('playerFire', () => {g.handlePlayerFire(socket.id)})
 })
 httpServer.listen(3000)
 

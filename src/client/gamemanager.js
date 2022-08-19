@@ -1,5 +1,5 @@
 import {animate} from './render'
-import { enableMouseDirection, disableMouseDirection, activateMenuListener, disableMenuListener, enableWeaponsListeners } from './input'
+import { enableMouseDirection, disableMouseDirection, activateMenuListener, disableMenuListener, enableWeaponsListeners, disableWeaponsListeners } from './input'
 import { menustack } from './render'
 import {transportmenu, cargomenu, tacticalmenu} from './menu'
 
@@ -48,6 +48,9 @@ export class gamemanager {
     handleWeaponsClick() {
         this.socket.emit('fire', {angle: this.weaponsAngle, ship: this.currentState.me.currentShip})
     }
+    handlePlayerFire() {
+        this.socket.emit('playerFire')
+    }
     updateMouseClick() {
         const currentMenu = menustack[menustack.length - 1]
         for (const comp in currentMenu.components) {
@@ -80,7 +83,12 @@ export class gamemanager {
     }
     handleKeyInput(input) {
         if (input === 'use') {
-            if (this.currentState.me.position.x === 8 && this.currentState.me.position.y === 2) {
+            if (this.weaponsMode) {
+                console.log('weapons')
+                this.weaponsMode = false
+                disableWeaponsListeners()
+            }
+            else if (this.currentState.me.position.x === 8 && this.currentState.me.position.y === 2) {
                 menustack.push(new tacticalmenu(this.currentState.me.currentShip))
                 activateMenuListener()
             }
@@ -92,6 +100,7 @@ export class gamemanager {
                 menustack.push(new cargomenu(this.currentState.me.currentShip))
                 activateMenuListener()
             }
+            
             else {
                 this.socket.emit('keyInput', input)
             }
@@ -99,6 +108,9 @@ export class gamemanager {
         else {
             this.socket.emit('keyInput', input)
         }
+    }
+    handlePlayerWeaponsDirection(data) {
+        this.socket.emit('playerWeaponsDirection', data)
     }
     handleTransportRequest() {
         const currentMenu = menustack[menustack.length - 1]

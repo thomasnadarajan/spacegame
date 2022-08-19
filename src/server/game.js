@@ -1,6 +1,6 @@
 import {player} from '../shared/player'
 import {ship} from '../shared/ship'
-import {laser} from '../shared/laser'
+import {shiplaser, playerlaser} from '../shared/laser'
 import { circleCollision } from './circlecol'
 export class game {
     constructor() {
@@ -85,9 +85,7 @@ export class game {
         const originy = parentShip.position.y - 10 * parentShip.shipblock
         const x = Math.cos(rot) * (originx - parentShip.position.x) - Math.sin(rot) * (originy - parentShip.position.y) + parentShip.position.x;
         const y = Math.sin(rot) * (originx - parentShip.position.x) + Math.cos(rot) * (originy - parentShip.position.y) + parentShip.position.y;
-        //console.log("Bullet x:", x, " Bullet y: ", y)
-        //console.log(parentShip.id, "x: ", parentShip.position.x - 5 * parentShip.shipblock, " y: ", parentShip.position.y - 5 * parentShip.shipblock)
-        this.shiplasers.push(new laser(x, y, rot, parentShip))
+        this.shiplasers.push(new shiplaser(x, y, rot, parentShip))
     }
     handlePowerUpdate(system, level, ship) {
         const s = system.replace('Shifter', '').toLowerCase()
@@ -95,9 +93,39 @@ export class game {
         this.ships[ship].systems[s] = level + 1
         this.ships[ship].availablePower -= used
     }
+    handlePlayerDirection(player, data) {
+        this.players[player].weaponsDirection = data
+        if (data >= Math.PI/4 && data < 3*Math.PI/4) {
+            this.players[player].direction = 3
+        }
+        else if (data >= 3*Math.PI/4 || data < - 3*Math.PI/4) {
+            this.players[player].direction = 2
+        }
+        else if (data >= - 3*Math.PI/4 && data < - Math.PI/4) {
+            this.players[player].direction = 1
+        }
+        else {
+            this.players[player].direction = 0
+        }
+    }
+    handlePlayerFire(player) {
+        const p = this.players[player]
+        const s = this.ships[p.currentShip]
+        const rot = p.weaponsDirection
+        const originx = p.worldPosition.x + p.width / 2 
+        const originy = p.worldPosition.y + p.height / 2 - 30
+        const rotx = p.worldPosition.x+ p.width / 2
+        const roty = p.worldPosition.y + p.height / 2
+        const x = Math.cos(rot) * (originx - rotx) - Math.sin(rot) * (originy - roty) +rotx;
+        const y = Math.sin(rot) * (originx - rotx) + Math.cos(rot) * (originy - roty) + roty;
+        this.playerlasers.push(new playerlaser(x, y, rot, p, s))
+    }
     update(){
         if (this.shouldSendUpdate) {
             for (const laser of this.shiplasers) {
+                laser.update()
+            }
+            for (const laser of this.playerlasers) {
                 laser.update()
             }
             for (const laser of this.shiplasers) {
@@ -117,7 +145,6 @@ export class game {
             Object.keys(this.sockets).forEach(playerID => {
                 const socket = this.sockets[playerID];
                 if (playerID in this.players) {
-                    //this.players[playerID].update()
                     const player = this.players[playerID];
                     socket.emit('update', this.generateGameUpdate(player));
                 }
@@ -136,7 +163,7 @@ export class game {
             players: this.players,
             ships: this.ships,
             shiplasers: this.shiplasers,
-            playerlasers: []
+            playerlasers: this.playerlasers
         }
         return update
     }

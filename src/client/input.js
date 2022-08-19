@@ -44,7 +44,11 @@ const menuclick = (e) => {
 const weaponsClickListener = (e) => {
     game.handleWeaponsClick()
 }
-
+const weaponsUse = ({key}) => {
+    if (key === 'q') {
+        game.handleKeyInput('use')
+    }
+}
 /*
 addEventListener('resize', () => {
     console.log('gets here: resize')
@@ -71,12 +75,21 @@ const weaponsDirectionListener = (e) => {
     const newdir = Math.atan2(e.x - window.innerWidth / 2, window.innerHeight / 2 - e.y)
     throttle(20, game.handleWeaponsMove(newdir))
 }
-
+const playerWeaponsListener = (e) => {
+    const newdir = Math.atan2(e.x - window.innerWidth / 2, window.innerHeight / 2 - e.y)
+    throttle(20, game.handlePlayerWeaponsDirection(newdir))
+}
+const playerWeaponsFire = (e) => {
+    game.handlePlayerFire()
+}
 export function activatePlayerListener() {
     addEventListener('keydown', directionIn)
+    addEventListener('mousemove', playerWeaponsListener)
+    addEventListener('mousedown', playerWeaponsFire)
 }
 export function disablePlayerListener() {
     removeEventListener('keydown', directionIn)
+    removeEventListener('mousemove', playerWeaponsListener)
 }
 export function disableMouseDirection() {
     removeEventListener('mousemove', mouseMove)
@@ -87,14 +100,23 @@ export function enableMouseDirection() {
 export function activateMenuListener() {
     addEventListener('mousemove', highlight)
     addEventListener('mousedown', menuclick)
-    removeEventListener('keydown', directionIn)
-}
-export function enableWeaponsListeners() {
-    addEventListener('mousemove', weaponsDirectionListener)
-    addEventListener('mousedown', weaponsClickListener)
+    disablePlayerListener()
 }
 export function disableMenuListener() {
     removeEventListener('mousemove', highlight)
     removeEventListener('mousedown', menuclick)
     addEventListener('keydown', directionIn)
+    activatePlayerListener()
+}
+export function enableWeaponsListeners() {
+    addEventListener('mousemove', weaponsDirectionListener)
+    addEventListener('mousedown', weaponsClickListener)
+    addEventListener('keydown', weaponsUse)
+    disablePlayerListener()
+}
+export function disableWeaponsListeners() {
+    removeEventListener('mousemove', weaponsDirectionListener)
+    removeEventListener('mousedown', weaponsClickListener)
+    removeEventListener('keydown', weaponsUse)
+    activatePlayerListener()
 }

@@ -1,18 +1,16 @@
 export class laser {
-    static radius = 20
+    static radii = {
+        "ship": 20,
+        "player": 5
+    }
     constructor(x, y, rotation, ship) {
         this.x = x
         this.y = y
-        // this rotation is about the center of the ship from which the laser is fired
         this.rotation = rotation
-        //this.totalrotation = rotation + ship.rotation + Math.PI / 2
-        //this.totalrotation = rotation + Math.PI / 2
         this.totalrotation = rotation
-        this.ship = ship.id
-        this.radius = laser.radius
-        this.position = {x: x, y: y}
+        this.position = {x: this.x, y: this.y}
         this.destroyed = false
-        this.power = ship.systems.weapons
+        this.ship = ship.id
     }
     update() {
         this.x += 2 * Math.sin(this.totalrotation)
@@ -21,5 +19,23 @@ export class laser {
     }
     setDestroyed() {
         this.destroyed = true
+    }
+}
+
+export class shiplaser extends laser {
+    constructor(x, y, rotation, ship) {
+        super(x, y, rotation)
+        this.radius = laser.radii["ship"]
+        this.power = ship.systems.weapons
+        
+    }
+}
+
+export class playerlaser extends laser {
+    constructor(x, y, rotation, player, ship) {
+        super(x, y, rotation, ship)
+        this.player = player
+        this.radius = laser.radii["player"]
+        
     }
 }

@@ -17,7 +17,7 @@ export class player {
         this.width = 25
         this.height = 25
         this.worldPosition =  {
-            x: (this.position.x * parentShip.shipblock) -this.width / 2 +  + parentShip.shipblock / 2,
+            x: (this.position.x * parentShip.shipblock) -this.width / 2  + parentShip.shipblock / 2,
             y: (this.position.y * parentShip.shipblock) -this.height / 2 + parentShip.shipblock / 2
         }
         // this rotation is relative to an upwards facing ship
@@ -25,6 +25,7 @@ export class player {
         this.pair = pair
         this.direction = 0
         this.animation = 0
+        this.weaponsDirection = 0
     }
     
     moveShip(shipid, x, y) {

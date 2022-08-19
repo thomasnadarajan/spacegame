@@ -1,4 +1,4 @@
-import { laser } from '../shared/laser';
+import { laser, playerlaser, shiplaser } from '../shared/laser';
 import { ship_mats, player_mats } from './asset'
 import ship_map from './assets/tilemap-editor.json'
 
@@ -192,6 +192,36 @@ function menuRender(menu, data) {
     }
     c.fillStyle = 'black'
 }
+function drawPlayerWeapon(player, playerShip) {
+    const x = -(5 * playerShip.shipblock) + player.worldPosition.x + player.width / 2
+    const y = -(5 * playerShip.shipblock) + player.worldPosition.y + player.height / 2
+    c.fillStyle = 'red'
+    c.translate(x, y)
+    c.rotate(player.weaponsDirection)
+    c.beginPath()
+    c.strokeStyle = 'red'
+    c.lineWidth = 5
+    c.moveTo(0, 0)
+    c.lineTo(0, -30)
+    c.stroke()
+    c.rotate(-player.weaponsDirection)
+    c.translate(-x, -y)
+}
+function drawPlayerLaser(l, ship) {
+    c.save()
+    const canvasX = canvas.width / 2 - (5 * ship.shipblock) + l.x
+    const canvasY = canvas.height / 2- (5 * ship.shipblock) + l.y
+    c.translate(canvasX, canvasY)
+    c.rotate(laser.totalrotation)
+    c.beginPath()
+    c.fillStyle = 'red'
+    c.strokeStyle = 'white'
+    c.lineWidth = 1/4 * l.radius
+    c.arc(0,0,l.radius * 3/4,0, 2* Math.PI)
+    c.fill()
+    c.stroke()
+    c.restore()
+}
 function playerRenderPilotMode(player, playerShip, centerShip) {
 
     // this will eventually be replaced by the parent ship
@@ -200,11 +230,7 @@ function playerRenderPilotMode(player, playerShip, centerShip) {
     c.save()
     c.translate(canvasX, canvasY)
     c.rotate(playerShip.rotation)
-    c.fillStyle = 'black'
     c.drawImage(player_mats, 16 + (player.animation * 64), 15 + (player.direction * 64), 32, 46, -(5 * playerShip.shipblock) + player.worldPosition.x, -(5 * playerShip.shipblock) + player.worldPosition.y, player.width, player.height)
-    //c.drawImage(player_mats, 16 , 15, 32, 46, -player.width / 2 + (player.position.x * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, -player.height / 2 + (player.position.y * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, player.width, player.height)
-    //c.fillRect(-player.width / 2 + (player.position.x * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, -player.height / 2 + (player.position.y * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, 
-    //player.width, player.height)
     c.restore()
 }
 function playerRenderPlayerMode(player, playerShip, centerShip) {
@@ -223,11 +249,10 @@ function playerRenderPlayerMode(player, playerShip, centerShip) {
     if (playerShip.position.x - centerShip.position.x !== 0 || playerShip.position.y - centerShip.position.y !== 0) {
         c.rotate(playerShip.rotation)
     }
-    c.fillStyle = 'black'
+    if (playerShip.id === centerShip.id) {
+        drawPlayerWeapon(player, playerShip)
+    }
     c.drawImage(player_mats, 16 + (player.animation * 64), 15 + (player.direction * 64), 32, 46, -(5 * playerShip.shipblock) + player.worldPosition.x, -(5 * playerShip.shipblock) + player.worldPosition.y, player.width, player.height)
-    //c.drawImage(player_mats, 16 , 15, 32, 46, -player.width / 2 + (player.position.x * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, -player.height / 2 + (player.position.y * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, player.width, player.height)
-    //c.fillRect(-player.width / 2 + (player.position.x * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, -player.height / 2 + (player.position.y * playerShip.shipblock) - (5 * playerShip.shipblock) + playerShip.shipblock / 2, 
-    //player.width, player.height)
     c.restore()
 }
 
@@ -242,8 +267,8 @@ function weaponsMode(playerShip, rotation) {
     c.beginPath()
     c.fillStyle = 'red'
     c.strokeStyle = 'white'
-    c.lineWidth = 1/4 * laser.radius
-    c.arc(0,0,laser.radius * 3/4,0, 2* Math.PI)
+    c.lineWidth = 1/4 * laser.radii["ship"]
+    c.arc(0,0,laser.radii["ship"] * 3/4,0, 2* Math.PI)
     c.fill()
     c.stroke()
     c.restore()
@@ -267,17 +292,17 @@ function laserRenderPlayerMode(laser, centerShip) {
     c.restore()
 }
 
-function laserRenderPilotMode(laser, centerShip) {
+function laserRenderPilotMode(l, centerShip) {
     c.save()
     const canvasX = canvas.width / 2 + (laser.x - centerShip.position.x)
     const canvasY = canvas.height / 2 + (laser.y - centerShip.position.y)
     c.translate(canvasX, canvasY)
-    c.rotate(laser.totalrotation)
+    c.rotate(l.totalrotation)
     c.beginPath()
     c.fillStyle = 'red'
     c.strokeStyle = 'white'
-    c.lineWidth = 1/4 * laser.radius
-    c.arc(0,0,laser.radius * 3/4,0, 2* Math.PI)
+    c.lineWidth = 1/4 * l.radius
+    c.arc(0,0,l.radius * 3/4,0, 2* Math.PI)
     c.fill()
     c.stroke()
     c.restore()
@@ -374,6 +399,11 @@ export function animate() {
         }
         for (const laser of this.shiplasers) {
             laserRenderPlayerMode(laser, playerShip)
+        }
+        for (const laser of this.playerlasers) {
+            if (laser.ship === this.me.currentShip) {
+                drawPlayerLaser(laser, playerShip)
+            }
         }
         if (playerShip.shieldsDownBurn > 0) {
             shieldsDown()
