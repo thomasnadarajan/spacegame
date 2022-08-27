@@ -5,7 +5,7 @@ const serverConfig = {
   externals: [nodeExternals()],
   target: 'node',
   output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'dist/server'),
     filename: 'server.js',
   },
 }
@@ -13,7 +13,7 @@ const clientConfig = {
   entry: './src/client/index.js',
   target: 'web',
   output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'dist/client'),
     filename: 'client.js',
   },
 }
