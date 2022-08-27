@@ -40,12 +40,13 @@ for (const key in ship_map.map) {
 export class ship {
     static grid = ship_grid
     static type = grid_types
+    static block = 40
     constructor(x, y, id) {
         this.id = id
         // this is the center position of the ship
         this.position = {x: x, y: y}
         // shipblock will be scaled at render time - add an argument to the constructor for scale
-        this.shipblock = 40
+        this.shipblock = ship.block
         // this is the rotation relative to the rest of the world
         this.rotation = 0
         this.players = []
@@ -61,7 +62,7 @@ export class ship {
             }
         }
         // will normally be 0 but just temp moved up to 12 just to demonstrate menu functionality
-        this.cargo = 0
+        this.cargo = 12
         this.radius = Math.sqrt(2 * Math.pow(5 * this.shipblock, 2))
 
         this.shieldsDownBurn = 0
@@ -96,5 +97,15 @@ export class ship {
         else  {
             this.hull = Math.min(0, this.hull - laser.power)
         }
+    }
+    static findGridType(x, y) {
+        for (const key in ship.type) {
+            for (let i = 0; i < ship.type[key].length; i++) {
+                if (ship.type[key][i].x === x && ship.type[key][i].y === y) {
+                    return key
+                }
+            }
+        }
+        return null
     }
 }

@@ -100,54 +100,58 @@ export class menu {
 }
 
 export class cargomenu extends menu {
-    constructor(ship) {
+    constructor(ship, own) {
         super('Cargo', ship)
+        this.own = own
         this.components = {
             "Units Available": {
                 Type: 'title',
                 BotBound: 0.2 * this.mainHeight + this.mainTopBound,
-                LeftBound: this.headerTextBoundHoriz
-            },
-            "Seconds to Complete": {
-                Type: 'title',
                 LeftBound: this.headerTextBoundHoriz,
-                BotBound: 0.6 * this.mainHeight + this.mainTopBound
+                Alternative: false,
+                AlternativeText: 'This is your ship'
             },
             "Transport": {
                 Type: 'button',
                 LeftBound: this.topBoundHoriz + 0.1 * this.width,
                 BotBound: this.mainTopBound + this.mainHeight - 0.1 * this.mainHeight,
-                Mouseover: false
+                Mouseover: false,
+                Alignment: 'left',
+                Width: this.buttonWidth
             },
-            "Cancel" : {
-                Type: 'button',
-                LeftBound: this.topBoundHoriz + this.width / 2,
-                BotBound: this.mainTopBound + this.mainHeight - 0.1 * this.mainHeight,
-                Mouseover: false
-            },
+
             "Close" : {
                 Type: 'button',
                 LeftBound: this.topBoundHoriz + this.width - 0.1 * this.width,
                 BotBound: this.mainTopBound + this.mainHeight - 0.1 * this.mainHeight,
-                Mouseover: false
+                Mouseover: false,
+                Alignment: 'right',
+                Width: this.buttonWidth
             }
         }
-        this.transporting = false
+        if (own) {
+            this.components["Units Available"].Alternative = true
+        }
 
+    }
+    clicked(comp) {
+        if (comp === 'Close') {
+            return 'close'
+        }
+        // change this to happen in the menu handler on the gamemanger side
+        if (!this.own) {
+            if (comp === 'Transport') {
+                game.startCargoTransport(this.ship)
+
+            }
+            else {
+                game.cancelCargoTransport(this.ship)
+            }
+        }
     }
     update(source) {
         this.units = source.cargo
-        this.seconds = this.units * 4
     }
-    /*
-    this is going to go on the server side
-    transport(source, sink) {
-        sink.cargo += 1
-        source.cargo -= 1
-        this.transporting = true
-        setTimeout(() => {this.transporting = false}, 4000)
-    }
-    */
 }
 
 export class transportmenu extends menu {
@@ -263,6 +267,7 @@ export class transportmenu extends menu {
         }
         else {
             if (this.selectedShip != null) {
+                console.log(data.ships[this.selectedShip])
                 for (const player of data.ships[this.selectedShip].players) {
                     for (const position of ship.type['transport']) {
                         if (position.x === data.players[player].position.x && position.y === data.players[player].position.y) {

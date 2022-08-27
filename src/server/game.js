@@ -1,7 +1,7 @@
 import {player} from '../shared/player'
 import {ship} from '../shared/ship'
 import {shiplaser, playerlaser} from '../shared/laser'
-import { circleCollision } from './circlecol'
+import { circleCollision, playerCollide, worldCollide } from './circlecol'
 export class game {
     constructor() {
         this.sockets ={}
@@ -17,6 +17,7 @@ export class game {
         
         this.lastUpdate = Date.now()
         this.shouldSendUpdate = false
+        this.cargoRequests = {}
         setInterval(this.update.bind(this), 1000/60)
     }
     addConnection(socket) {
@@ -32,9 +33,8 @@ export class game {
             this.pairs[code] = {ship: ship_id, players: [socket.id]}
             this.players[socket.id] = new player(player_user, this.ships[ship_id], 1, 2, code)
             this.ships[ship_id].addPlayer(socket.id, this.players[socket.id].position)
-            //const ship_id2 = Math.floor(1000 + Math.random() * 9000)
-            //this.ships[ship_id2] = new ship(x + 575, y, ship_id2)
-            
+            const ship_id2 = Math.floor(1000 + Math.random() * 9000)
+            this.ships[ship_id2] = new ship(x + 575, y, ship_id2)
         }
         else {
             // Eventually we will do type checking/cleansing client side.
@@ -138,7 +138,50 @@ export class game {
                     }
                 }
             }
+            for (const laser of this.playerlasers) {
+                for (const player in this.players) {
+                    if (laser.ship === this.players[player].currentShip) {
+                        if (playerCollide(this.players[player], null, laser)) {
+                            this.players[player].hit()
+                            laser.setDestroyed()
+                        }
+                    }
+                }
+                var worldCol = false
+                for (let x = 0; x < 10; x++) {
+                    for (let y = 0; y < 10; y++) {
+                        if (ship.grid[x][y] === 0) {
+                            const blockPosition = {x: x * ship.block, y: y * ship.block, width: ship.block, height: ship.block}
+                            if (worldCollide(laser, blockPosition)) {
+                                laser.setDestroyed()
+                                worldCol = true
+                            }
+                        }
+                    }
+                    if (worldCol) {
+                        break
+                    }
+                }
+            }
+            var markedTransports = []
+            for (const transport in this.cargoRequests) {
+                if (this.cargoRequests[transport].time % 240 === 0 && this.cargoRequests[transport].time !== 0) {
+                    if (this.ships[transport].cargo > 0) {
+                        this.ships[this.cargoRequests[transport].sink].cargo += 1
+                        this.ships[transport].cargo -= 1
+                    }
+                    if (this.ships[transport].cargo === 0) {
+                        markedTransports.push(transport)
+                    }
+
+                }
+                this.cargoRequests[transport].time += 1
+            }
+            for (const transport of markedTransports) {
+                delete this.cargoRequests[transport]
+            }
             this.shiplasers = this.shiplasers.filter(laser => !laser.destroyed)
+            this.playerlasers = this.playerlasers.filter(laser => !laser.destroyed)
             for (const ship in this.ships) {
                 this.ships[ship].update()
             }
@@ -245,4 +288,17 @@ export class game {
             this.ships[p.currentShip].moving = !this.ships[p.currentShip].moving
         }
     }
-}
+    handleTransportStart(data) {
+        if (!(data.source in this.cargoRequests )) {
+            this.cargoRequests[data.source] = {sink: data.sink, time: 0}
+        }
+        else if (data.sink !== this.cargoRequests[data.source].sink) {
+            this.cargoRequests[data.source].sink = data.sink
+            this.cargoRequests[data.source].time = 0
+        }
+    }
+
+    cancelTransportRequest(data) {
+        delete this.cargoRequests[data.source]
+    }
+}   

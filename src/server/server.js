@@ -43,6 +43,12 @@ io.on('connection', socket => {
       g.handlePlayerDirection(socket.id, data)
     })
     socket.on('playerFire', () => {g.handlePlayerFire(socket.id)})
+    socket.on('startCargoTransport', data => {
+      g.handleTransportStart(data)
+    })
+    socket.on('cancelCargoTransport', data => {
+      g.cancelTransportRequest(data)
+    })
 })
 httpServer.listen(3000)
 

@@ -24,7 +24,7 @@ export class laser {
 
 export class shiplaser extends laser {
     constructor(x, y, rotation, ship) {
-        super(x, y, rotation)
+        super(x, y, rotation,ship)
         this.radius = laser.radii["ship"]
         this.power = ship.systems.weapons
         

@@ -97,7 +97,12 @@ export class gamemanager {
                 activateMenuListener()
             }
             else if (this.currentState.me.position.x === 3 && this.currentState.me.position.y === 6) {
-                menustack.push(new cargomenu(this.currentState.me.currentShip))
+                if (this.currentState.me.currentShip !== this.currentState.me.parentShip) {
+                menustack.push(new cargomenu(this.currentState.me.currentShip, false))
+                }
+                else {
+                    menustack.push(new cargomenu(this.currentState.me.currentShip, true))
+                }
                 activateMenuListener()
             }
             
@@ -135,5 +140,12 @@ export class gamemanager {
         else {
             this.socket.emit('addPlayer', {u: user, s: pair})
         }
+    }
+
+    startCargoTransport(ship) {
+        this.socket.emit('startCargoTransport', {source: ship, sink: this.currentState.me.parentShip})
+    }
+    cancelCargoTransport(ship) {
+        this.socket.emit('cancelCargoTransport', {source: ship})
     }
 }

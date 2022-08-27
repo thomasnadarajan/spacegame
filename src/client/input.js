@@ -90,6 +90,7 @@ export function activatePlayerListener() {
 export function disablePlayerListener() {
     removeEventListener('keydown', directionIn)
     removeEventListener('mousemove', playerWeaponsListener)
+    removeEventListener('mousedown', playerWeaponsFire)
 }
 export function disableMouseDirection() {
     removeEventListener('mousemove', mouseMove)

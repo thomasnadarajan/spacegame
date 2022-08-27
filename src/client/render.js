@@ -107,14 +107,20 @@ function renderCargoMenu(menu) {
     c.font = menu.mainFontSize.concat("px Antonio")
     for (const comp in menu.components) {
         if (menu.components[comp].Type === 'button') {
-            c.textAlign = 'center'
+            c.textAlign = menu.components[comp].Alignment
+            c.fillStyle = mouseoverColor[menu.components[comp].Mouseover]
             c.font = menu.buttonFontSize.concat("px Antonio")
             c.fillText(comp, menu.components[comp].LeftBound, menu.components[comp].BotBound)
         }
         else {
             c.textAlign = 'left'
             c.font = menu.mainFontSize.concat("px Antonio")
-            c.fillText(menu.units.toString().concat(" ").concat(comp), menu.components[comp].LeftBound, menu.components[comp].BotBound)
+            if (menu.components[comp].Alternative) {
+                c.fillText(menu.components[comp].AlternativeText, menu.components[comp].LeftBound, menu.components[comp].BotBound)
+            }
+            else {
+                c.fillText(menu.units.toString().concat(" ".concat(comp)), menu.components[comp].LeftBound, menu.components[comp].BotBound)
+            }
         }
     }
 
