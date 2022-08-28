@@ -3,7 +3,7 @@ import express from 'express'
 import {createServer} from 'http'
 
 import {game} from './game'
-const app = express(express.static('client'))
+const app = express(express.static('../client'))
 const httpServer = createServer(app)
 const io = new Server(httpServer)
 const g = new game()
