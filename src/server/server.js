@@ -1,15 +1,14 @@
 import {Server} from 'socket.io'
 import express from 'express'
 import {createServer} from 'http'
-
+import path from 'path'
 import {game} from './game'
-const app = express(express.static('../client'))
+const app = express()
 const httpServer = createServer(app)
 const io = new Server(httpServer)
 const g = new game()
-app.get('/', (req, res) => {
-    res.send(window.location);
-  });
+app.use(express.static(path.resolve('./src/client/serve')))
+
 console.log('server running!')
 
 io.on('connection', socket => {
