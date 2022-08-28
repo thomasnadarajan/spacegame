@@ -5,7 +5,7 @@ const serverConfig = {
   externals: [nodeExternals()],
   target: 'node',
   output: {
-    path: path.resolve(__dirname, 'dist/server'),
+    path: path.resolve(__dirname, 'dist'),
     filename: 'server.js',
   },
 }
