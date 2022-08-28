@@ -4,6 +4,7 @@ import {createServer} from 'http'
 import path from 'path'
 import {game} from './game'
 const app = express()
+const PORT = process.env.PORT || 5500
 const httpServer = createServer(app)
 const io = new Server(httpServer)
 const g = new game()
@@ -49,7 +50,7 @@ io.on('connection', socket => {
       g.cancelTransportRequest(data)
     })
 })
-httpServer.listen(3000)
+httpServer.listen(PORT)
 
 
 
