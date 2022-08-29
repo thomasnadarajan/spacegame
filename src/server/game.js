@@ -309,6 +309,17 @@ export class game {
             const currentShip = this.players[playerID].currentShip;
             delete this.players[playerID];
             this.ships[currentShip].removePlayer(playerID)
+            if (this.ships[currentShip].players.length === 0) {
+                delete this.ships[currentShip]
+            }
+        }
+        for (const pair in this.pairs) {
+            if (playerID in this.pairs[pair]) {
+                this.pairs[pair].splice(this.pairs[pair].indexOf(playerID), 1)
+                if (this.pairs[pair].length === 1) {
+                    delete this.pairs[pair]
+                }
+            }
         }
     }
 }   
