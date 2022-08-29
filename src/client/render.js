@@ -379,7 +379,7 @@ function drawPairCode(pairCode) {
     c.textAlign = 'left'
     c.font = "24px Antonio"
     c.fillStyle = 'gray'
-    c.fillText('pair code: '.concat(pairCode.toString()), canvas.width - canvas.width / 8, canvas.height / 8)
+    c.fillText('Pair Code: '.concat(pairCode.toString()), canvas.width - canvas.width / 8, canvas.height / 8)
 }
 // player always renders in the center of the screen
 // many test functions in here at the moment
