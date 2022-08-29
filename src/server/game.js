@@ -33,8 +33,8 @@ export class game {
             this.pairs[code] = {ship: ship_id, players: [socket.id]}
             this.players[socket.id] = new player(player_user, this.ships[ship_id], 1, 2, code)
             this.ships[ship_id].addPlayer(socket.id)
-            const ship_id2 = Math.floor(1000 + Math.random() * 9000)
-            this.ships[ship_id2] = new ship(x + 575, y, ship_id2)
+            //const ship_id2 = Math.floor(1000 + Math.random() * 9000)
+            //this.ships[ship_id2] = new ship(x + 575, y, ship_id2)
         }
         else {
             // Eventually we will do type checking/cleansing client side.
