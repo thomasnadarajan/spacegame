@@ -31,4 +31,9 @@ socket.on('update', (data) => {
     }
 })
 
+const disconnect = () => {
+    socket.emit('disconnect')
+}
+
 setCanvasDims()
+addEventListener('beforeunload', disconnect)

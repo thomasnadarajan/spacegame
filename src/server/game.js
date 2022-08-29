@@ -32,7 +32,7 @@ export class game {
             const code = Math.floor(1000 + Math.random() * 9000)
             this.pairs[code] = {ship: ship_id, players: [socket.id]}
             this.players[socket.id] = new player(player_user, this.ships[ship_id], 1, 2, code)
-            this.ships[ship_id].addPlayer(socket.id, this.players[socket.id].position)
+            this.ships[ship_id].addPlayer(socket.id)
             const ship_id2 = Math.floor(1000 + Math.random() * 9000)
             this.ships[ship_id2] = new ship(x + 575, y, ship_id2)
         }
@@ -44,7 +44,7 @@ export class game {
                 for (let j = 0; j < 10; j++) { 
                     if (ship.grid[i][j] === 1 && parentShip.playerGrid[i][j] === 0) {
                         this.players[socket.id] = new player(player_user, parentShip, i, j, pair_proper)
-                        parentShip.addPlayer(socket.id, this.players[socket.id].position)
+                        parentShip.addPlayer(socket.id)
                         this.keys[socket.id] = {
                             left: false,
                             right: false,
@@ -225,7 +225,7 @@ export class game {
                 if (!found) {
                     this.ships[p.currentShip].removePlayer(player, p.position)
                     p.moveShip(s, position.x, position.y)
-                    this.ships[s].addPlayer(player, position)
+                    this.ships[s].addPlayer(player)
                 }
             }
             
@@ -300,5 +300,15 @@ export class game {
 
     cancelTransportRequest(data) {
         delete this.cargoRequests[data.source]
+    }
+
+    disconnect(socket) {
+        const playerID = socket.id;
+        delete this.sockets[playerID];
+        if (playerID in this.players) {
+            const currentShip = this.players[playerID].currentShip;
+            delete this.players[playerID];
+            this.ships[currentShip].removePlayer(playerID)
+        }
     }
 }   

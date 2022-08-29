@@ -49,6 +49,10 @@ io.on('connection', socket => {
     socket.on('cancelCargoTransport', data => {
       g.cancelTransportRequest(data)
     })
+    socket.on('disconnect', () => {
+      g.disconnect(socket)
+      socket.disconnect()
+    })
 })
 httpServer.listen(PORT)
 

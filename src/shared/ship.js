@@ -70,13 +70,11 @@ export class ship {
     setRotation(deg) {
         this.rotation = deg
     }
-    addPlayer(player, position) {
+    addPlayer(player) {
         this.players.push(player)
-        this.playerGrid[position.x][position.y] = 1
     }
-    removePlayer(player, position) {
+    removePlayer(player) {
         this.players.splice(this.players.indexOf(player), 1)
-        this.playerGrid[position.x][position.y] = 0
     }
     update() {
         if (this.shieldsDownBurn > 0) {
