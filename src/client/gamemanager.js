@@ -136,7 +136,6 @@ export class gamemanager {
     addPlayer(user, pair) {
         if (pair === null) {
             this.socket.emit('addPlayer', {u: user, s: null})
-            
         }
         else {
             this.socket.emit('addPlayer', {u: user, s: pair})
