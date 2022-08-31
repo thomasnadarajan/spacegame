@@ -49,7 +49,6 @@ export class player {
         if (ship.grid[lower_x][lower_y] === 1 && ship.grid[upper_x][upper_y] === 1 && ship.grid[left_x][left_y] === 1 && ship.grid[right_x][right_y] === 1) {
             this.position = {x: lower_x, y: lower_y}
             this.worldPosition = {x: x, y: y}
-            //console.log(this.position, this.worldPosition)
             this.animation += 1
         }
     }
@@ -57,7 +56,9 @@ export class player {
         this.playerView = !this.playerView
     }
     hit() {
-        this.health-=2;
-        console.log(this.health)
+        this.health-=10;
+        if (this.health <= 0) {
+            this.health = 0
+        }
     }
 }

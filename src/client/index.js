@@ -2,8 +2,7 @@ import {setCanvasDims  } from "./render"
 import {io} from 'socket.io-client'
 import { gamemanager } from "./gamemanager"
 import { gamestate } from "./gamestate"
-import { requestUserDetails } from "./input" 
-//const socket = io("http://localhost:3000", { transports: ['websocket', 'polling', 'flashsocket'] })
+import { disablePlayerListener, requestUserDetails, activatePlayerListener } from "./input" 
 const socket = io()
 document.getElementById('play-button').addEventListener('click', requestUserDetails)
 socket.on('connect', () => {
@@ -16,21 +15,27 @@ socket.on('update', (data) => {
         game.setCurrentState(new gamestate(data))
         game.renderCurrentState()
     }
-    else {
-        if (lastUpdate === null) {
-            lastUpdate = data.ships
-        }
-        else {
-            for (const ship in data.ships) {
-                if (!(ship in lastUpdate)) {
-                    lastUpdate = data.ships
-                    break
-                }
-            }
-        }
-    }
 })
-
+socket.on('dead',() => {
+    game.currentState = null
+    game.cancelAnimationFrame()
+    disablePlayerListener()
+    document.getElementById('play-menu').classList.remove("hidden")
+    document.getElementById('game').classList.add("hidden")
+})
+socket.on('ready', () => {
+    document.getElementById('play-menu').classList.add("hidden")
+    document.getElementById('game').classList.remove("hidden")
+    activatePlayerListener()
+})
+socket.on('pairError', () => {
+    document.getElementById('error').classList.remove("hidden")
+    document.getElementById('error').innerHTML = "Pair code does not exist"
+})
+socket.on('userError', () => {
+    document.getElementById('error').classList.remove("hidden")
+    document.getElementById('error').innerHTML = "Username already exists"
+})
 const disconnect = () => {
     socket.emit('disconnect')
 }

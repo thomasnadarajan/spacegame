@@ -73,6 +73,9 @@ export class gamemanager {
     renderCurrentState() {
         this.animationFrameRequest = requestAnimationFrame(animate.bind(this.currentState))
     }
+    cancelAnimationFrame() {
+        cancelAnimationFrame(this.animationFrameRequest)
+    }
     handleMouseInput(input) {
         this.socket.emit('mouseInput', input)
     }

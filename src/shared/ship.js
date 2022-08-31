@@ -61,8 +61,7 @@ export class ship {
                 this.playerGrid[i][j] = 0
             }
         }
-        // will normally be 0 but just temp moved up to 12 just to demonstrate menu functionality
-        this.cargo = 12
+        this.cargo = 10
         this.radius = Math.sqrt(2 * Math.pow(5 * this.shipblock, 2))
 
         this.shieldsDownBurn = 0

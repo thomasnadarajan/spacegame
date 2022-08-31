@@ -10,7 +10,7 @@ export class game {
         this.pairs = {}
         // a list of all the ships in the game
         this.ships = {}
-
+        this.usernames = []
         // a list of all the lasers in flight
         this.shiplasers = []
         this.playerlasers = []
@@ -33,37 +33,44 @@ export class game {
             this.pairs[code] = {ship: ship_id, players: [socket.id]}
             this.players[socket.id] = new player(player_user, this.ships[ship_id], 1, 2, code)
             this.ships[ship_id].addPlayer(socket.id)
-            //const ship_id2 = Math.floor(1000 + Math.random() * 9000)
-            //this.ships[ship_id2] = new ship(x + 575, y, ship_id2)
+            this.keys[socket.id] = {
+                left: false,
+                right: false,
+                up: false,
+                down: false,
+                use: false
+            }
+            socket.emit('ready')
+
         }
         else {
             // Eventually we will do type checking/cleansing client side.
             const pair_proper = parseInt(pair)
-            const parentShip = this.ships[this.pairs[pair_proper].ship]
-            for (let i = 0; i < 10; i++) {
-                for (let j = 0; j < 10; j++) { 
-                    if (ship.grid[i][j] === 1 && parentShip.playerGrid[i][j] === 0) {
-                        this.players[socket.id] = new player(player_user, parentShip, i, j, pair_proper)
-                        parentShip.addPlayer(socket.id)
-                        this.keys[socket.id] = {
-                            left: false,
-                            right: false,
-                            up: false,
-                            down: false,
-                            use: false
+            if (pair_proper in this.pairs) {
+                const parentShip = this.ships[this.pairs[pair_proper].ship]
+                for (let i = 0; i < 10; i++) {
+                    for (let j = 0; j < 10; j++) { 
+                        if (ship.grid[i][j] === 1 && parentShip.playerGrid[i][j] === 0) {
+                            this.usernames.push(player_user)
+                            this.players[socket.id] = new player(player_user, parentShip, i, j, pair_proper)
+                            parentShip.addPlayer(socket.id)
+                            this.keys[socket.id] = {
+                                left: false,
+                                right: false,
+                                up: false,
+                                down: false,
+                                use: false
+                            }
+                            socket.emit('ready')
+                            return
                         }
-                        return
                     }
                 }
+                
             }
+            socket.emit('pairError')
         }
-        this.keys[socket.id] = {
-            left: false,
-            right: false,
-            up: false,
-            down: false,
-            use: false
-        }
+
     }
     setShipDirection(player, dir) {
         this.ships[player.currentShip].setRotation(dir)
@@ -122,6 +129,23 @@ export class game {
     }
     update(){
         if (this.shouldSendUpdate) {
+            this.shiplasers = this.shiplasers.filter(laser => !laser.destroyed)
+            this.playerlasers = this.playerlasers.filter(laser => !laser.destroyed)
+            var markedPlayers = []
+            for (const player in this.players) {
+                if (this.players[player].health === 0) {
+                    const p = this.players[player]
+                    this.ships[p.currentShip].removePlayer(player)
+                    markedPlayers.push(player)
+                }
+                else {
+                    this.players[player].health = Math.min(this.players[player].health + 1, this.players[player].health)
+                }
+            }
+            for (const player of markedPlayers) {
+                delete this.players[player]
+                this.sockets[player].emit('dead')
+            }
             for (const laser of this.shiplasers) {
                 laser.update()
             }
@@ -180,8 +204,7 @@ export class game {
             for (const transport of markedTransports) {
                 delete this.cargoRequests[transport]
             }
-            this.shiplasers = this.shiplasers.filter(laser => !laser.destroyed)
-            this.playerlasers = this.playerlasers.filter(laser => !laser.destroyed)
+            
             for (const ship in this.ships) {
                 this.ships[ship].update()
             }

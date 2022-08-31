@@ -66,9 +66,9 @@ export const requestUserDetails = () => {
     else {
         game.addPlayer(user, pair)
     }
-    document.getElementById('play-menu').classList.add("hidden")
-    document.getElementById('game').classList.remove("hidden")
-    activatePlayerListener()
+    if (game.currentState != null) {
+        
+    }
 }
 
 const weaponsDirectionListener = (e) => {

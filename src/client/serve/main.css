@@ -59,6 +59,8 @@ html, body {
   
   #play-menu p {
     margin-bottom: 0;
+    font-family: Helvetica;
+    color: red;
   }
 
   #play-menu h1 {
