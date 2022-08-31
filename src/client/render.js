@@ -213,6 +213,14 @@ function drawPlayerWeapon(player, playerShip) {
     c.rotate(-player.weaponsDirection)
     c.translate(-x, -y)
 }
+function drawPlayerName(player, playerShip) {
+    const x = -(5 * playerShip.shipblock) + player.worldPosition.x + (player.width / 2)
+    const y = -(5 * playerShip.shipblock) + player.worldPosition.y + player.height + (0.75 * player.height)
+    c.fillStyle = 'black'
+    c.font = '12px Antonio'
+    c.textAlign = 'center'
+    c.fillText(player.user, x, y)
+}
 function drawPlayerLaser(l, ship) {
     c.save()
     const canvasX = canvas.width / 2 - (5 * ship.shipblock) + l.x
@@ -239,6 +247,7 @@ function playerRenderPilotMode(player, playerShip, centerShip) {
     c.drawImage(player_mats, 16 + (player.animation * 64), 15 + (player.direction * 64), 32, 46, -(5 * playerShip.shipblock) + player.worldPosition.x, -(5 * playerShip.shipblock) + player.worldPosition.y, player.width, player.height)
     c.restore()
 }
+
 function playerRenderPlayerMode(player, playerShip, centerShip) {
     // playerShip refers to the ship of the player currently being rendered
     // centerShip refers to the ship that is at present in the center of THIS player's screen
@@ -257,6 +266,7 @@ function playerRenderPlayerMode(player, playerShip, centerShip) {
     }
     if (playerShip.id === centerShip.id) {
         drawPlayerWeapon(player, playerShip)
+        drawPlayerName(player, playerShip)
     }
     c.drawImage(player_mats, 16 + (player.animation * 64), 15 + (player.direction * 64), 32, 46, -(5 * playerShip.shipblock) + player.worldPosition.x, -(5 * playerShip.shipblock) + player.worldPosition.y, player.width, player.height)
     c.restore()
