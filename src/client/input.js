@@ -8,26 +8,51 @@ const mouseMove = (e) => {
 }
 
 // convert key to direciton
-const directionIn = ({key}) => {
-    switch (key) {
+const directionIn = (e) => {
+    if (e.repeat) {
+        return
+    }
+    switch (e.key) {
         case 'w':
-            throttle(40,game.handleKeyInput('up'))
+            game.handleKeyInput('up')
             break
         case 'a':
-            throttle(40,game.handleKeyInput('left'))
+            game.handleKeyInput('left')
             break
         case 's':
-            throttle(40,game.handleKeyInput('down'))
+            game.handleKeyInput('down')
             break
         case 'd':
-            throttle(40,game.handleKeyInput('right'))
+            game.handleKeyInput('right')
             break
         case 'q':
             game.handleKeyInput('use')
             break
     }
 }
-
+const stopDirection = (e) => {
+    if (e.repeat) {
+        console.log('gets here')
+        return
+    }
+    switch (e.key) {
+        case 'w':
+            game.handleStopDirection('up')
+            break
+        case 'a':
+            game.handleStopDirection('left')
+            break
+        case 's':
+            game.handleStopDirection('down')
+            break
+        case 'd':
+            game.handleStopDirection('right')
+            break
+        case 'q':
+            game.handleStopDirection('use')
+            break
+    }
+}
 
 const highlight = (e) => {
     const canvas = document.querySelector('canvas')
@@ -66,9 +91,6 @@ export const requestUserDetails = () => {
     else {
         game.addPlayer(user, pair)
     }
-    if (game.currentState != null) {
-        
-    }
 }
 
 const weaponsDirectionListener = (e) => {
@@ -86,11 +108,13 @@ export function activatePlayerListener() {
     addEventListener('keydown', directionIn)
     addEventListener('mousemove', playerWeaponsListener)
     addEventListener('mousedown', playerWeaponsFire)
+    addEventListener('keyup', stopDirection)
 }
 export function disablePlayerListener() {
     removeEventListener('keydown', directionIn)
     removeEventListener('mousemove', playerWeaponsListener)
     removeEventListener('mousedown', playerWeaponsFire)
+    removeEventListener('keyup', stopDirection)
 }
 export function disableMouseDirection() {
     removeEventListener('mousemove', mouseMove)
@@ -106,7 +130,6 @@ export function activateMenuListener() {
 export function disableMenuListener() {
     removeEventListener('mousemove', highlight)
     removeEventListener('mousedown', menuclick)
-    addEventListener('keydown', directionIn)
     activatePlayerListener()
 }
 export function enableWeaponsListeners() {

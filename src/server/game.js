@@ -33,13 +33,7 @@ export class game {
             this.pairs[code] = {ship: ship_id, players: [socket.id]}
             this.players[socket.id] = new player(player_user, this.ships[ship_id], 1, 2, code)
             this.ships[ship_id].addPlayer(socket.id)
-            this.keys[socket.id] = {
-                left: false,
-                right: false,
-                up: false,
-                down: false,
-                use: false
-            }
+            
             socket.emit('ready')
 
         }
@@ -54,13 +48,6 @@ export class game {
                             this.usernames.push(player_user)
                             this.players[socket.id] = new player(player_user, parentShip, i, j, pair_proper)
                             parentShip.addPlayer(socket.id)
-                            this.keys[socket.id] = {
-                                left: false,
-                                right: false,
-                                up: false,
-                                down: false,
-                                use: false
-                            }
                             socket.emit('ready')
                             return
                         }
@@ -76,14 +63,13 @@ export class game {
         this.ships[player.currentShip].setRotation(dir)
     }
     handleDirectionInput(player, key) {
-        this.keys[player][key] = true
-        if (key !== 'use') {
-            this.movePlayer(player)
-        }
-        else {
+        this.players[player].keys[key] = true
+        if (key === 'use') {
             this.usePlayer(player)
         }
-        
+    }
+    stopDirection(player, key) {
+        this.players[player].keys[key] = false
     }
     handleFire(rotation, ship) {
         const parentShip = this.ships[ship]
@@ -208,10 +194,14 @@ export class game {
             for (const ship in this.ships) {
                 this.ships[ship].update()
             }
+            for (const player in this.players) {
+                this.players[player].update()
+            }
             Object.keys(this.sockets).forEach(playerID => {
                 const socket = this.sockets[playerID];
                 if (playerID in this.players) {
                     const player = this.players[playerID];
+                    
                     socket.emit('update', this.generateGameUpdate(player));
                 }
                 else {
@@ -252,56 +242,6 @@ export class game {
                 }
             }
             
-        }
-        else {
-            if (this.keys[player].left) {
-                p.movePlayer(p.worldPosition.x - 5, p.worldPosition.y, this.ships[p.currentShip])
-                if (p.direction === 1) {
-                    p.animation = p.animation < 8 ? p.animation + 1 : 0
-                }
-                else {
-                    p.direction = 1
-                    p.animation = 0
-                }
-                this.keys[player].left = false
-            }
-
-            else if (this.keys[player].right) {
-                p.movePlayer(p.worldPosition.x + 5, p.worldPosition.y, this.ships[p.currentShip])
-                if (p.direction === 3) {
-                    p.animation = p.animation < 8 ? p.animation + 1 : 0
-                }
-                else {
-                    p.direction = 3
-                    p.animation = 0
-                }
-                this.keys[player].right = false
-            }
-
-            else if (this.keys[player].up) {
-                p.movePlayer(p.worldPosition.x, p.worldPosition.y - 5, this.ships[p.currentShip])
-                
-                if (p.direction === 0) {
-                    p.animation = p.animation < 8 ? p.animation + 1 : 0
-                }
-                else {
-                    p.direction = 0
-                    p.animation = 0
-                }
-                this.keys[player].up = false
-            }
-
-            else if (this.keys[player].down) {
-                p.movePlayer(p.worldPosition.x, p.worldPosition.y + 5, this.ships[p.currentShip])
-                if (p.direction === 2) {
-                    p.animation = p.animation < 8 ? p.animation + 1 : 0
-                }
-                else {
-                    p.direction = 2
-                    p.animation = 0
-                }
-                this.keys[player].down = false
-            }
         }
     }
     usePlayer(player) {

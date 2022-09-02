@@ -53,6 +53,9 @@ io.on('connection', socket => {
       g.disconnect(socket)
       socket.disconnect()
     })
+    socket.on('stopDirection', data => {
+      g.stopDirection(socket.id, data)
+    })
 })
 httpServer.listen(PORT)
 

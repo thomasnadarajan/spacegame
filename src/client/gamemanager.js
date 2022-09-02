@@ -117,6 +117,9 @@ export class gamemanager {
             this.socket.emit('keyInput', input)
         }
     }
+    handleStopDirection(input) {
+        this.socket.emit('stopDirection', input)
+    }
     handlePlayerWeaponsDirection(data) {
         this.socket.emit('playerWeaponsDirection', data)
     }
