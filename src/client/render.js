@@ -406,6 +406,11 @@ export function animate() {
         for (const player in this.players) {
             playerRenderPlayerMode(this.players[player], this.ships[this.players[player].currentShip], playerShip)
         }
+        for (const laser of this.playerlasers) {
+            if (laser.ship === this.me.currentShip) {
+                drawPlayerLaser(laser, playerShip)
+            }
+        }
         // menu rendering stack goes here
         if (menustack.length >= 1) {
             menuRender(menustack[menustack.length - 1], this)
@@ -416,11 +421,7 @@ export function animate() {
         for (const laser of this.shiplasers) {
             laserRenderPlayerMode(laser, playerShip)
         }
-        for (const laser of this.playerlasers) {
-            if (laser.ship === this.me.currentShip) {
-                drawPlayerLaser(laser, playerShip)
-            }
-        }
+        
         if (playerShip.shieldsDownBurn > 0) {
             shieldsDown()
         }
