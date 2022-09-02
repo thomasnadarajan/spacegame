@@ -113,10 +113,22 @@ export class game {
         const y = Math.sin(rot) * (originx - rotx) + Math.cos(rot) * (originy - roty) + roty;
         this.playerlasers.push(new playerlaser(x, y, rot, p, s))
     }
+    checkShipDestroy() {
+        for (const ship in this.ships) {
+            if (this.ships[ship].hull <= 0) {
+                for (const player of this.ships[ship].players) {
+                    delete this.players[player]
+                    this.sockets[player].emit('dead')
+                }
+                delete this.ships[ship]
+            }
+        }
+    }
     update(){
         if (this.shouldSendUpdate) {
             this.shiplasers = this.shiplasers.filter(laser => !laser.destroyed)
             this.playerlasers = this.playerlasers.filter(laser => !laser.destroyed)
+            this.checkShipDestroy()
             var markedPlayers = []
             for (const player in this.players) {
                 if (this.players[player].health === 0) {

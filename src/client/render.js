@@ -310,8 +310,8 @@ function laserRenderPlayerMode(laser, centerShip) {
 
 function laserRenderPilotMode(l, centerShip) {
     c.save()
-    const canvasX = canvas.width / 2 + (laser.x - centerShip.position.x)
-    const canvasY = canvas.height / 2 + (laser.y - centerShip.position.y)
+    const canvasX = canvas.width / 2 + (l.x - centerShip.position.x)
+    const canvasY = canvas.height / 2 + (l.y - centerShip.position.y)
     c.translate(canvasX, canvasY)
     c.rotate(l.totalrotation)
     c.beginPath()

@@ -53,7 +53,7 @@ export class ship {
         this.moving = false
         this.availablePower = 2
         this.systems = {shields: 1, engines: 1, weapons: 1}
-        this.shield = this.systems.shields * 5
+        this.shield = this.systems.shields * 20
         this.hull = 100
         this.playerGrid = ship.grid.map((arr) => {return arr.slice()})
         for (let i = 0; i < 10; i++) {
@@ -86,13 +86,13 @@ export class ship {
     }
     hit(laser) {
         if (this.shield > 0) {
-            this.shield = Math.min(0, this.shield -laser.power)
+            this.shield = Math.max(0, this.shield -laser.power)
             if (this.shield === 0) {
                 this.shieldsDownBurn = 40
             }
         }
         else  {
-            this.hull = Math.min(0, this.hull - laser.power)
+            this.hull = Math.max(0, this.hull - laser.power)
         }
     }
     static findGridType(x, y) {
