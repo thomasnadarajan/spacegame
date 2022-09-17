@@ -43,7 +43,7 @@ export class player {
         this.worldPosition.x = (this.position.x * ship.block) -this.width / 2  + ship.block / 2
         this.worldPosition.y = (this.position.y * ship.block) -this.height / 2 + ship.block / 2
     }
-    movePlayer(x, y) {
+    movePlayer(x, y, cargo_grid) {
         // position bounds are set at 9 because the ship is 10x10 units
         const lower_x = Math.floor(x / ship.block)
         const lower_y = Math.floor(y / ship.block)
@@ -53,10 +53,9 @@ export class player {
         const left_y = Math.floor((y + this.height)/ ship.block)
         const right_x = Math.floor((x + this.width)/ ship.block)
         const right_y = Math.floor(y/ ship.block)
-        if (ship.grid[lower_x][lower_y] === 1 && ship.grid[upper_x][upper_y] === 1 && ship.grid[left_x][left_y] === 1 && ship.grid[right_x][right_y] === 1) {
+        if (ship.grid[lower_x][lower_y] === 1 && ship.grid[upper_x][upper_y] === 1 && ship.grid[left_x][left_y] === 1 && ship.grid[right_x][right_y] === 1 && cargo_grid[lower_x][lower_y] === 0 && cargo_grid[upper_x][upper_y] === 0 && cargo_grid[left_x][left_y] === 0 && cargo_grid[right_x][right_y] === 0) {
             this.position = {x: lower_x, y: lower_y}
             this.worldPosition = {x: x, y: y}
-            this.animation += 1
         }
     }
     togglePlayerView() {
@@ -68,11 +67,11 @@ export class player {
             this.health = 0
         }
     }
-    update() {
+    update(cargo_grid) {
         if (this.keys.left) {
-            this.movePlayer(this.worldPosition.x - 4, this.worldPosition.y)
+            this.movePlayer(this.worldPosition.x - 4, this.worldPosition.y, cargo_grid)
             if (this.direction === 1) {
-                this.animation = this.animation < 8 ? this.animation + 1 : 0
+                this.animation = this.animation < 3.8 ? this.animation + 0.2 : 0
             }
             else {
                 this.direction = 1
@@ -81,9 +80,9 @@ export class player {
         }
 
         else if (this.keys.right) {
-            this.movePlayer(this.worldPosition.x + 4, this.worldPosition.y)
+            this.movePlayer(this.worldPosition.x + 4, this.worldPosition.y, cargo_grid)
             if (this.direction === 3) {
-                this.animation = this.animation < 8 ? this.animation + 1 : 0
+                this.animation = this.animation < 3.8 ? this.animation + 0.2 : 0
             }
             else {
                 this.direction = 3
@@ -92,10 +91,10 @@ export class player {
         }
 
         else if (this.keys.up) {
-            this.movePlayer(this.worldPosition.x, this.worldPosition.y - 4)
+            this.movePlayer(this.worldPosition.x, this.worldPosition.y - 4, cargo_grid)
             
             if (this.direction === 0) {
-                this.animation = this.animation < 8 ? this.animation + 1 : 0
+                this.animation = this.animation < 3.8 ? this.animation + 0.2 : 0
             }
             else {
                 this.direction = 0
@@ -104,9 +103,9 @@ export class player {
         }
 
         else if (this.keys.down) {
-            this.movePlayer(this.worldPosition.x, this.worldPosition.y + 4)
+            this.movePlayer(this.worldPosition.x, this.worldPosition.y + 4, cargo_grid)
             if (this.direction === 2) {
-                this.animation = this.animation < 8 ? this.animation + 1 : 0
+                this.animation = this.animation < 3.8 ? this.animation + 0.2 : 0
             }
             else {
                 this.direction = 2

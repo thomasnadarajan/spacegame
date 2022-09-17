@@ -9,7 +9,9 @@ socket.on('connect', () => {
     console.log("client connected")
 })
 export const game = new gamemanager(socket)
+export var stars = []
 var lastUpdate = null
+socket.on('stars', (data) => {stars = data})
 socket.on('update', (data) => {
     if (data.me != null) {
         game.setCurrentState(new gamestate(data))

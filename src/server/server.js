@@ -3,17 +3,25 @@ import express from 'express'
 import {createServer} from 'http'
 import path from 'path'
 import {game} from './game'
+import {star} from '../shared/star'
 const app = express()
 const PORT = process.env.PORT || 5500
 const httpServer = createServer(app)
 const io = new Server(httpServer)
 const g = new game()
+
+let stars = []
+for (let i = 0; i < 1500; i++) {
+    stars.push(new star(5000, 5000))
+}
+
 app.use(express.static(path.resolve('./src/client/serve')))
 
 console.log('server running!')
 
 io.on('connection', socket => {
     g.addConnection(socket)
+    socket.emit('stars', stars)
     socket.on('addPlayer', (data) => {
       g.addPlayer(socket, data.u, data.s)
     })

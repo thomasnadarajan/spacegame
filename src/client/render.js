@@ -1,7 +1,10 @@
-import { laser, playerlaser, shiplaser } from '../shared/laser';
-import { ship_mats, player_mats } from './asset'
+import { laser } from '../shared/laser';
+import { player_mats } from './asset'
 import ship_map from './assets/tilemap-editor.json'
+import {stars} from './index'
+import {ship_colors, ship} from '../shared/ship'
 
+const blinkies = {}
 CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
     if (w < 2 * r) r = w / 2;
     if (h < 2 * r) r = h / 2;
@@ -14,7 +17,7 @@ CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
     this.closePath();
     return this;
 }
-const mouseoverColor = {true: 'white', false: 'black'}
+const mouseoverColor = {true: '#d63031', false: 'black'}
 /*
 ALL THIS STUFF IS CLIENT-SIDE STUFF 
 */
@@ -33,12 +36,40 @@ export function setCanvasDims() {
     c.height = scaleRatio * innerHeight
     
 }
-
+function renderBlinkies(x, y) {
+    if (!(x + y in blinkies)) {
+        blinkies[x+y] = 0
+    }
+    const width = ship.block
+    const height = ship.block
+    const num = Math.floor(Math.random() * (11));
+    const subsize = width / 6
+    const r = Math.sqrt(2 * Math.pow((subsize/2),2))
+    c.fillStyle = '#d63031'
+    c.fillRect(x + ((1/6) * width), y + ((1/6) * height), subsize, subsize)
+    c.fillStyle = '#55efc4'
+    c.fillRect(x + width - ((1/6) * width) - subsize, y + height - ((1/6) * height) - subsize, subsize, subsize)
+    if (num % 5 === 0) {
+        if (blinkies[x + y] === 25) {
+            c.strokeStyle = '#ffeaa7'
+            c.fillStyle = '#ffeaa7'
+            c.beginPath()
+            c.arc(x + ((1/6) * width) + subsize / 2, y + height - ((1/6) * height) - (subsize / 2), r, 0 , 2 * Math.PI)
+            c.arc(x + ((1/6) * width) + subsize / 2, y + height - ((1/6) * height) - (subsize / 2), r, 0 , 2 * Math.PI)
+            c.stroke()
+            c.fill()
+            blinkies[x + y] = 0
+        }
+        else {
+            blinkies[x+y] += 1
+        }
+    }
+}
 
 function renderTransportMenu(menu) {
     renderMenuHeader(menu)
     // MAIN STUFF
-    c.fillStyle = '#ffaa90'
+    c.fillStyle = '#b2bec3'
     c.fillRect(menu.topBoundHoriz, menu.mainTopBound,menu.width, menu.mainHeight)
     c.fillStyle = 'black'
     c.font = menu.mainFontSize.concat("px Antonio")
@@ -65,7 +96,7 @@ function renderTransportMenu(menu) {
             if (comp === 'CrewList') {
                 for (const crew of menu.crewList) {
                     if (menu.components[comp].Mouseover === true && menu.components[comp].Segment === currentHeight || menu.selectedPlayer === crew) {
-                        c.fillStyle = 'white'
+                        c.fillStyle = '#d63031'
                     }
                     else {
                         c.fillStyle = 'black'
@@ -77,7 +108,7 @@ function renderTransportMenu(menu) {
             else {
                 for (const ship of menu.shipList) {
                     if (menu.components[comp].Mouseover === true && menu.components[comp].Segment === currentHeight || menu.selectedShip === ship) {
-                        c.fillStyle = 'white'
+                        c.fillStyle = '#d63031'
                     }
                     else {
                         c.fillStyle = 'black'
@@ -90,7 +121,7 @@ function renderTransportMenu(menu) {
     }
 }
 function renderMenuHeader(menu) {
-    c.fillStyle = '#cc2233'
+    c.fillStyle = '#636e72'
     c.roundRect(menu.topBoundHoriz, menu.topBoundVert, menu.width, menu.headerHeight, 15).fill()
     c.font = menu.headerFontSize.concat("px Antonio")
     c.fillStyle = 'white'
@@ -101,7 +132,7 @@ function renderCargoMenu(menu) {
     // HEADER STUFF
     renderMenuHeader(menu)
     // MAIN STUFF
-    c.fillStyle = '#ffaa90'
+    c.fillStyle = '#b2bec3'
     c.fillRect(menu.topBoundHoriz, menu.mainTopBound,menu.width, menu.mainHeight)
     c.fillStyle = 'black'
     c.font = menu.mainFontSize.concat("px Antonio")
@@ -125,11 +156,42 @@ function renderCargoMenu(menu) {
     }
 
 }
+function renderStarsPlayerMode(centerShip) {
+    for (const star of stars) {
+        const canvasX = canvas.width / 2 + (star.x - centerShip.position.x)
+        const canvasY = canvas.height / 2 + (star.y - centerShip.position.y)
+        c.save()
+        c.translate(canvas.width/2, canvas.height/2)
+        c.rotate(-1 * centerShip.rotation)
+        c.translate(-canvas.width/2, -canvas.height/2)
+        c.translate(canvasX, canvasY)
+        c.beginPath();
+        c.fillStyle = star.style
+        c.arc(0, 0, star.radius, 0, 360);
+        c.fill()
+        c.restore()
+    }
+    
+}
+
+function renderStars(centerShip) {
+    for (const star of stars) {
+        const canvasX = canvas.width / 2 + (star.x - centerShip.position.x)
+        const canvasY = canvas.height / 2 + (star.y - centerShip.position.y)
+        c.save()
+        c.translate(canvasX, canvasY)
+        c.beginPath();
+        c.fillStyle = star.style
+        c.arc(0, 0, star.radius, 0, 360);
+        c.fill()
+        c.restore()
+    }
+}
 function renderTacticalMenu(menu) {
     // HEADER STUFF
     renderMenuHeader(menu)
     // MAIN STUFF
-    c.fillStyle = '#ffaa90'
+    c.fillStyle = '#b2bec3'
     c.fillRect(menu.topBoundHoriz, menu.mainTopBound,menu.width, menu.mainHeight)
     c.fillStyle = 'black'
     c.font = menu.mainFontSize.concat("px Antonio")
@@ -147,7 +209,7 @@ function renderTacticalMenu(menu) {
                 var fill = false
                 if (i <= menu.components[comp].Level) {
                     fill = true
-                    c.fillStyle = 'white'
+                    c.fillStyle = '#d63031'
                 }
                 if (menu.components[comp].Alignment === 'left') {
                     c.strokeRect(menu.components[comp].LeftBound, menu.components[comp].BotBound - (menu.shifterHeight * (i + 1)), menu.components[comp].Width, menu.shifterHeight)
@@ -201,11 +263,11 @@ function menuRender(menu, data) {
 function drawPlayerWeapon(player, playerShip) {
     const x = -(5 * playerShip.shipblock) + player.worldPosition.x + player.width / 2
     const y = -(5 * playerShip.shipblock) + player.worldPosition.y + player.height / 2
-    c.fillStyle = 'red'
+    c.fillStyle = '#d63031'
     c.translate(x, y)
     c.rotate(player.weaponsDirection)
     c.beginPath()
-    c.strokeStyle = 'red'
+    c.strokeStyle = '#d63031'
     c.lineWidth = 5
     c.moveTo(0, 0)
     c.lineTo(0, -30)
@@ -228,13 +290,69 @@ function drawPlayerLaser(l, ship) {
     c.translate(canvasX, canvasY)
     c.rotate(laser.totalrotation)
     c.beginPath()
-    c.fillStyle = 'red'
+    c.fillStyle = '#d63031'
     c.strokeStyle = 'white'
     c.lineWidth = 1/4 * l.radius
     c.arc(0,0,l.radius * 3/4,0, 2* Math.PI)
     c.fill()
     c.stroke()
     c.restore()
+}
+
+function animatePlayerRender(player) {
+    const startingX = -(5 * ship.block) + player.worldPosition.x
+    const startingY = -(5 * ship.block) + player.worldPosition.y
+    const smallRad = (player.width / 4) / 2
+    const largeRad = (player.width / 2) / 2
+    switch (player.direction) {
+        case 0:
+        case 2:
+            c.beginPath()
+            c.fillStyle = 'black'
+            c.strokeStyle = 'black'
+            if (player.animation >= 1.0 && player.animation < 2.0) {
+                c.arc(startingX + smallRad, startingY + smallRad, smallRad, 0, 2 * Math.PI)
+                c.arc(startingX + player.width / 2, startingY + player.height / 2, largeRad, 0, 2 * Math.PI)
+                c.arc(startingX + player.width - smallRad, startingY + player.height - smallRad, smallRad, 0, 2 * Math.PI)
+            }
+            else if (player.animation >= 3.0) {
+                c.arc(startingX + smallRad, startingY + player.height - smallRad, smallRad, 0, 2 * Math.PI)
+                c.arc(startingX + player.width / 2, startingY + player.height / 2, largeRad, 0, 2 * Math.PI)
+                c.arc(startingX + player.width - smallRad, startingY + smallRad, smallRad, 0, 2 * Math.PI)
+            }
+            else {
+                c.arc(startingX + smallRad, startingY + player.height / 2, smallRad, 0, 2 * Math.PI)
+                c.arc(startingX + player.width / 2, startingY + player.height / 2, largeRad, 0, 2 * Math.PI)
+                c.arc(startingX + player.width - smallRad, startingY + player.height / 2, smallRad, 0, 2 * Math.PI)
+            }
+            c.stroke()
+            c.fill()
+            break
+        case 1:
+        case 3:
+            c.beginPath()
+            c.fillStyle = 'black'
+            c.strokeStyle = 'black'
+            if (player.animation >= 1.0 && player.animation < 2.0) {
+                c.arc(startingX + smallRad, startingY + smallRad, smallRad, 0, 2 * Math.PI)
+                c.arc(startingX + player.width / 2, startingY + player.height / 2, largeRad, 0, 2 * Math.PI)
+                c.arc(startingX + player.width - smallRad, startingY + player.height - smallRad, smallRad, 0, 2 * Math.PI)
+            }
+            else if (player.animation >= 3.0) {
+                c.arc(startingX + player.width - smallRad, startingY + smallRad, smallRad, 0, 2 * Math.PI)
+                c.arc(startingX + player.width / 2, startingY + player.height / 2, largeRad, 0, 2 * Math.PI)
+                c.arc(startingX + smallRad, startingY + player.height - smallRad, smallRad, 0, 2 * Math.PI)
+            }
+            else {
+                c.arc(startingX + player.width / 2, startingY + smallRad, smallRad, 0, 2 * Math.PI)
+                c.arc(startingX + player.width / 2, startingY + player.height / 2, largeRad, 0, 2 * Math.PI)
+                c.arc(startingX + player.width / 2, startingY + player.height - smallRad, smallRad, 0, 2 * Math.PI)
+            }
+            c.stroke()
+            c.fill()
+            break
+    }
+
 }
 function playerRenderPilotMode(player, playerShip, centerShip) {
 
@@ -244,10 +362,10 @@ function playerRenderPilotMode(player, playerShip, centerShip) {
     c.save()
     c.translate(canvasX, canvasY)
     c.rotate(playerShip.rotation)
-    c.drawImage(player_mats, 16 + (player.animation * 64), 15 + (player.direction * 64), 32, 46, -(5 * playerShip.shipblock) + player.worldPosition.x, -(5 * playerShip.shipblock) + player.worldPosition.y, player.width, player.height)
+    //c.drawImage(player_mats, 16 + (player.animation * 64), 15 + (player.direction * 64), 32, 46, -(5 * playerShip.shipblock) + player.worldPosition.x, -(5 * playerShip.shipblock) + player.worldPosition.y, player.width, player.height)
+    animatePlayerRender(player)
     c.restore()
 }
-
 function playerRenderPlayerMode(player, playerShip, centerShip) {
     // playerShip refers to the ship of the player currently being rendered
     // centerShip refers to the ship that is at present in the center of THIS player's screen
@@ -268,7 +386,9 @@ function playerRenderPlayerMode(player, playerShip, centerShip) {
         drawPlayerWeapon(player, playerShip)
         drawPlayerName(player, playerShip)
     }
-    c.drawImage(player_mats, 16 + (player.animation * 64), 15 + (player.direction * 64), 32, 46, -(5 * playerShip.shipblock) + player.worldPosition.x, -(5 * playerShip.shipblock) + player.worldPosition.y, player.width, player.height)
+    
+    //c.drawImage(player_mats, 16 + (player.animation * 64), 15 + (player.direction * 64), 32, 46, -(5 * playerShip.shipblock) + player.worldPosition.x, -(5 * playerShip.shipblock) + player.worldPosition.y, player.width, player.height)
+    animatePlayerRender(player)
     c.restore()
 }
 
@@ -281,7 +401,7 @@ function weaponsMode(playerShip, rotation) {
     c.translate(-(canvas.width / 2), -(canvas.height / 2))
     c.translate(canvasX, canvasY)    
     c.beginPath()
-    c.fillStyle = 'red'
+    c.fillStyle = '#d63031'
     c.strokeStyle = 'white'
     c.lineWidth = 1/4 * laser.radii["ship"]
     c.arc(0,0,laser.radii["ship"] * 3/4,0, 2* Math.PI)
@@ -299,7 +419,7 @@ function laserRenderPlayerMode(laser, centerShip) {
     c.translate(canvasX, canvasY)
     c.rotate(laser.totalrotation)
     c.beginPath()
-    c.fillStyle = 'red'
+    c.fillStyle = '#d63031'
     c.strokeStyle = 'white'
     c.lineWidth = 1/4 * laser.radius
     c.arc(0,0,laser.radius * 3/4,0, 2* Math.PI)
@@ -315,7 +435,7 @@ function laserRenderPilotMode(l, centerShip) {
     c.translate(canvasX, canvasY)
     c.rotate(l.totalrotation)
     c.beginPath()
-    c.fillStyle = 'red'
+    c.fillStyle = '#d63031'
     c.strokeStyle = 'white'
     c.lineWidth = 1/4 * l.radius
     c.arc(0,0,l.radius * 3/4,0, 2* Math.PI)
@@ -328,15 +448,27 @@ function shipDraw(ship) {
     const left_most_x = -1 * (5 * ship.shipblock)
     const left_most_y = -1 * (5 * ship.shipblock)
     for (const key_map of Object.keys(ship_map.map)) {
+
         const sp = key_map.split("-")
         const symb  = ship_map.map[key_map].tileSymbol
         const start_x = left_most_x + (parseInt(sp[0]) * ship.shipblock)
         const start_y = left_most_y+ (parseInt(sp[1]) * ship.shipblock)
+        /*
         for (const key_tile in ship_map.tileSet) {
             const tile = ship_map.tileSet[key_tile]
             if (tile.tileSymbol === symb) {
                 c.drawImage(ship_mats, tile.x * 32, tile.y * 32, 32, 32, start_x, start_y, ship.shipblock, ship.shipblock)
             }
+        }*/
+        c.fillStyle = ship_colors[symb]
+        c.fillRect(start_x,start_y,ship.shipblock,ship.shipblock)
+        if (c.fillStyle === "#0984e3") {
+            renderBlinkies(start_x,start_y,ship)
+        }
+        if (c.fillStyle === "#e17055" && ship.cargomap[parseInt(sp[0])][parseInt(sp[1])] === 1) {
+            c.fillStyle = "#b2bec3"
+            const w = ship.shipblock * (3/ 4)
+            c.fillRect(start_x + (ship.shipblock / 2) - (w/ 2), start_y + (ship.shipblock / 2) - (w/ 2), w, w)
         }
     }
 }
@@ -356,7 +488,7 @@ function shipRenderPlayerMode(ship, centerShip) {
         c.rotate(ship.rotation)
     }
     c.beginPath()
-    c.fillStyle = 'rgba(31, 29, 43, 1.0)'
+    c.fillStyle = "#2d3436"
     c.arc(0,0,ship.radius,0, 2* Math.PI)
     c.fill()
     shipDraw(ship)
@@ -372,7 +504,7 @@ function shipRenderPilotMode(ship, centerShip) {
     c.translate(canvasX, canvasY)
     c.rotate(ship.rotation)
     c.beginPath()
-    c.fillStyle = 'rgba(31, 29, 43, 1.0)'
+    c.fillStyle = "#2d3436"
     c.arc(0,0,ship.radius,0, 2* Math.PI)
     c.fill()
     shipDraw(ship)
@@ -399,6 +531,7 @@ export function animate() {
     c.fillRect(0, 0, canvas.width, canvas.height)
     const playerShip = this.ships[this.me.currentShip]
     if (this.me.playerView) {
+        renderStarsPlayerMode(playerShip)
         for (const ship in this.ships) {
             shipRenderPlayerMode(this.ships[ship], playerShip)
         }
@@ -427,6 +560,7 @@ export function animate() {
         }
     }
     else {
+        renderStars(playerShip)
         for (const ship in this.ships) {
             shipRenderPilotMode(this.ships[ship], playerShip)
         }

@@ -102,6 +102,7 @@ export class menu {
 export class cargomenu extends menu {
     constructor(ship, own) {
         super('Cargo', ship)
+        this.units = ship.cargo
         this.own = own
         this.components = {
             "Units Available": {
@@ -109,7 +110,7 @@ export class cargomenu extends menu {
                 BotBound: 0.2 * this.mainHeight + this.mainTopBound,
                 LeftBound: this.headerTextBoundHoriz,
                 Alternative: false,
-                AlternativeText: 'This is your ship'
+                AlternativeText: 'You have '.concat("units of cargo in storage.")
             },
             "Transport": {
                 Type: 'button',
@@ -151,6 +152,7 @@ export class cargomenu extends menu {
     }
     update(source) {
         this.units = source.cargo
+        this.components['Units Available'].AlternativeText = 'You have '.concat(this.units.toString().concat(" units of cargo in storage."))
     }
 }
 

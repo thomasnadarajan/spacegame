@@ -2,6 +2,7 @@ import ship_map from './assets/tilemap-editor.json'
 
 var ship_grid = Array(10).fill().map(() => Array(10))
 var grid_types = {}
+export let ship_colors = {}
 for (const key in ship_map.map) {
     const target_x = parseInt(key.split("-")[0])
     const target_y = parseInt(key.split("-")[1])
@@ -13,6 +14,7 @@ for (const key in ship_map.map) {
             }
             else {
                 grid_types['floor'] = [{x: target_x, y: target_y}]
+                ship_colors[ship_map.map[key].tileSymbol] = '#dfe6e9'
             }
         }
         else if (ship_map.map[key].x === 4 && ship_map.map[key].y === 3) {
@@ -21,19 +23,36 @@ for (const key in ship_map.map) {
             }
             else {
                 grid_types['transport'] = [{x: target_x, y: target_y}]
+                ship_colors[ship_map.map[key].tileSymbol] = '#fdcb6e'
             }
         }
-        else if (ship_map.map[key].x === 4 && ship_map.map[key].y === 3) {
+        else if (ship_map.map[key].x === 4 && ship_map.map[key].y === 0) {
             if ('cargopad' in grid_types) {
                 grid_types['cargopad'].push({x: target_x, y: target_y})
             }
             else {
                 grid_types['cargopad'] = [{x: target_x, y: target_y}]
+                ship_colors[ship_map.map[key].tileSymbol] = "#e17055"
             }
         }
     }
     else {
         ship_grid[target_x][target_y] = 0
+        if (ship_map.map[key].x === 2 && ship_map.map[key].y === 3) {
+            if (!(ship_map.map[key].tileSymbol in ship_colors)) {
+                ship_colors[ship_map.map[key].tileSymbol] = "#0984e3"
+            }
+        }
+        else if (ship_map.map[key].x === 1 && ship_map.map[key].y === 3) {
+            if (!(ship_map.map[key].tileSymbol in ship_colors)) {
+                ship_colors[ship_map.map[key].tileSymbol] = "#0984e3"
+            }
+        }
+        else {
+            if (!(ship_map.map[key].tileSymbol in ship_colors)) {
+                ship_colors[ship_map.map[key].tileSymbol] = '#2d3436'
+            }
+        }
     }
 }
 
@@ -65,6 +84,8 @@ export class ship {
         this.radius = Math.sqrt(2 * Math.pow(5 * this.shipblock, 2))
 
         this.shieldsDownBurn = 0
+
+        this.cargomap = Array(10).fill().map(() => Array(10).fill(0));
     }
     setRotation(deg) {
         this.rotation = deg
@@ -82,6 +103,14 @@ export class ship {
         if (this.moving) {
             this.position.x += 2 * Math.sin(this.rotation) * this.systems.engines / 2
             this.position.y -= 2 * Math.cos(this.rotation) * this.systems.engines / 2
+        }
+        for (const place of grid_types['cargopad']) {
+            this.cargomap[place.x][place.y] = 0
+        }
+        var q = 0
+        for (let i = 10; i <= this.cargo && i / 10 <= grid_types['cargopad'].length; i += 10) {
+            this.cargomap[grid_types['cargopad'][q].x][grid_types['cargopad'][q].y] = 1
+            q++
         }
     }
     hit(laser) {

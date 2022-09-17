@@ -70,6 +70,7 @@ export class game {
     }
     stopDirection(player, key) {
         this.players[player].keys[key] = false
+        this.players[player].animation = 0
     }
     handleFire(rotation, ship) {
         const parentShip = this.ships[ship]
@@ -207,7 +208,7 @@ export class game {
                 this.ships[ship].update()
             }
             for (const player in this.players) {
-                this.players[player].update()
+                this.players[player].update(this.ships[this.players[player].currentShip].cargomap)
             }
             Object.keys(this.sockets).forEach(playerID => {
                 const socket = this.sockets[playerID];
