@@ -152,33 +152,37 @@ function renderCargoMenu(menu) {
 }
 function renderStarsPlayerMode(centerShip) {
     for (const star of stars) {
-        const canvasX = canvas.width / 2 + (star.x - centerShip.position.x)
-        const canvasY = canvas.height / 2 + (star.y - centerShip.position.y)
-        c.save()
-        c.translate(canvas.width/2, canvas.height/2)
-        c.rotate(-1 * centerShip.rotation)
-        c.translate(-canvas.width/2, -canvas.height/2)
-        c.translate(canvasX, canvasY)
-        c.beginPath();
-        c.fillStyle = star.style
-        c.arc(0, 0, star.radius, 0, 360);
-        c.fill()
-        c.restore()
+        if (Math.sqrt((star.x - centerShip.position.x) ** 2 + (star.y - centerShip.position.y) ** 2) < 1000) {
+            const canvasX = canvas.width / 2 + (star.x - centerShip.position.x)
+            const canvasY = canvas.height / 2 + (star.y - centerShip.position.y)
+            c.save()
+            c.translate(canvas.width/2, canvas.height/2)
+            c.rotate(-1 * centerShip.rotation)
+            c.translate(-canvas.width/2, -canvas.height/2)
+            c.translate(canvasX, canvasY)
+            c.beginPath();
+            c.fillStyle = star.style
+            c.arc(0, 0, star.radius, 0, 360);
+            c.fill()
+            c.restore()
+        }
     }
     
 }
 
 function renderStars(centerShip) {
     for (const star of stars) {
-        const canvasX = canvas.width / 2 + (star.x - centerShip.position.x)
-        const canvasY = canvas.height / 2 + (star.y - centerShip.position.y)
-        c.save()
-        c.translate(canvasX, canvasY)
-        c.beginPath();
-        c.fillStyle = star.style
-        c.arc(0, 0, star.radius, 0, 360);
-        c.fill()
-        c.restore()
+        if (Math.sqrt((star.x - centerShip.position.x) ** 2 + (star.y - centerShip.position.y) ** 2) < 1000) {
+            const canvasX = canvas.width / 2 + (star.x - centerShip.position.x)
+            const canvasY = canvas.height / 2 + (star.y - centerShip.position.y)
+            c.save()
+            c.translate(canvasX, canvasY)
+            c.beginPath();
+            c.fillStyle = star.style
+            c.arc(0, 0, star.radius, 0, 360);
+            c.fill()
+            c.restore()
+        }
     }
 }
 function renderTacticalMenu(menu) {

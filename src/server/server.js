@@ -11,8 +11,8 @@ const io = new Server(httpServer)
 const g = new game()
 
 let stars = []
-for (let i = 0; i < 2000; i++) {
-    stars.push(new star(25000, 25000))
+for (let i = 0; i < 10000; i++) {
+    stars.push(new star(10000, 10000))
 }
 
 app.use(express.static(path.resolve('./src/client/serve')))
