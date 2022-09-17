@@ -49,21 +49,15 @@ function renderBlinkies(x, y) {
     c.fillRect(x + ((1/6) * width), y + ((1/6) * height), subsize, subsize)
     c.fillStyle = '#55efc4'
     c.fillRect(x + width - ((1/6) * width) - subsize, y + height - ((1/6) * height) - subsize, subsize, subsize)
-    if (num % 5 === 0) {
-        if (blinkies[x + y] === 25) {
-            c.strokeStyle = '#ffeaa7'
-            c.fillStyle = '#ffeaa7'
-            c.beginPath()
-            c.arc(x + ((1/6) * width) + subsize / 2, y + height - ((1/6) * height) - (subsize / 2), r, 0 , 2 * Math.PI)
-            c.arc(x + ((1/6) * width) + subsize / 2, y + height - ((1/6) * height) - (subsize / 2), r, 0 , 2 * Math.PI)
-            c.stroke()
-            c.fill()
-            blinkies[x + y] = 0
-        }
-        else {
-            blinkies[x+y] += 1
-        }
-    }
+    c.strokeStyle = '#ffeaa7'
+    c.fillStyle = '#ffeaa7'
+    c.beginPath()
+    c.arc(x + ((1/6) * width) + subsize / 2, y + height - ((1/6) * height) - (subsize / 2), r, 0 , 2 * Math.PI)
+    c.arc(x + ((1/6) * width) + subsize / 2, y + height - ((1/6) * height) - (subsize / 2), r, 0 , 2 * Math.PI)
+    c.stroke()
+    c.fill()
+    blinkies[x + y] = 0
+
 }
 
 function renderTransportMenu(menu) {
