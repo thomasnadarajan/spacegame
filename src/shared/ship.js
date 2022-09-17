@@ -1,5 +1,4 @@
 import ship_map from './assets/tilemap-editor.json'
-
 var ship_grid = Array(10).fill().map(() => Array(10))
 var grid_types = {}
 export let ship_colors = {}
@@ -96,13 +95,22 @@ export class ship {
     removePlayer(player) {
         this.players.splice(this.players.indexOf(player), 1)
     }
-    update() {
+    update(ships, col) {
         if (this.shieldsDownBurn > 0) {
             this.shieldsDownBurn--
         }
         if (this.moving) {
             this.position.x += 2 * Math.sin(this.rotation) * this.systems.engines / 2
             this.position.y -= 2 * Math.cos(this.rotation) * this.systems.engines / 2
+            for (const s in ships) {
+                if (s != this.id) {
+                    if (col(this, ships[s])) {
+                        this.position.x -= 2 * Math.sin(this.rotation) * this.systems.engines / 2
+                        this.position.y += 2 * Math.cos(this.rotation) * this.systems.engines / 2
+                        break
+                    }
+                }
+            }
         }
         for (const place of grid_types['cargopad']) {
             this.cargomap[place.x][place.y] = 0

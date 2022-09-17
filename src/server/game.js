@@ -25,10 +25,28 @@ export class game {
     }
     addPlayer(socket, player_user, pair = null) {
         if(pair === null) {
-            const x = 5000 * (0.25 + Math.random() * 0.5)
-            const y = 5000 * (0.25 + Math.random() * 0.5)
-            const ship_id = Math.floor(1000 + Math.random() * 9000)
-            this.ships[ship_id] = new ship(x, y, ship_id)
+            var started = false
+            var ship_built = null
+            var ship_id = Math.floor(1000 + Math.random() * 9000)
+            while (!started) {
+                const x = 5000 * (0.25 + Math.random() * 0.5)
+                const y = 5000 * (0.25 + Math.random() * 0.5)
+                ship_id = Math.floor(1000 + Math.random() * 9000)
+                const temp = new ship(x, y, ship_id)
+                var found = false
+                for (const s in this.ships) {
+                    if (circleCollision(temp, this.ships[s])) {
+                        found = true
+                        break
+                    }
+
+                }
+                if (!found) {
+                    ship_built = temp
+                    started = true
+                }
+            }
+            this.ships[ship_id] = ship_built
             const code = Math.floor(1000 + Math.random() * 9000)
             this.pairs[code] = {ship: ship_id, players: [socket.id]}
             this.players[socket.id] = new player(player_user, this.ships[ship_id], 1, 2, code)
@@ -205,7 +223,8 @@ export class game {
             }
             
             for (const ship in this.ships) {
-                this.ships[ship].update()
+                const f = circleCollision
+                this.ships[ship].update(this.ships,f)
             }
             for (const player in this.players) {
                 this.players[player].update(this.ships[this.players[player].currentShip].cargomap)

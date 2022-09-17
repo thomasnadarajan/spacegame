@@ -13,7 +13,7 @@ export const rectangleOverlap = (l1, r1, l2, r2) => {
 }
 export const circleCollision = (ship1, ship2, laser) => {
     if (ship2 !== null) {
-        if (distanceCalc(ship1, ship2) <= ship1.radius + ship2.radius) {
+        if (distanceCalc(ship1, ship2) < ship1.radius + ship2.radius) {
             return true
         }
         return false
