@@ -1,9 +1,8 @@
 import { laser } from '../shared/laser';
-import { player_mats } from './asset'
 import ship_map from './assets/tilemap-editor.json'
 import {stars} from './index'
 import {ship_colors, ship} from '../shared/ship'
-
+import { distanceCalc, distanceCalcCargo, posDistanceCalc } from '../shared/distance';
 const blinkies = {}
 CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
     if (w < 2 * r) r = w / 2;
@@ -261,12 +260,35 @@ function menuRender(menu, data) {
 function drawPlayerWeapon(player, playerShip) {
     const x = -(5 * playerShip.shipblock) + player.worldPosition.x + player.width / 2
     const y = -(5 * playerShip.shipblock) + player.worldPosition.y + player.height / 2
-    c.fillStyle = '#d63031'
+    c.fillStyle = 'rgba(214, 48, 49, 0.2)'
+    c.strokeStyle = 'rgba(214, 48, 49, 0.2)'
     c.translate(x, y)
+    c.beginPath()
+    switch(player.direction) {
+        case 1:
+            c.arc(0,0,30,3 * Math.PI / 4, 5 * Math.PI / 4)
+            c.lineTo(0,0)
+            break
+        case 2:
+            c.arc(0, 0, 30, Math.PI / 4, 3 * Math.PI / 4)
+            c.lineTo(0,0)
+            break
+        case 0:
+            c.arc(0, 0, 30, 5 * Math.PI / 4, 7 * Math.PI / 4)
+            c.lineTo(0,0)
+            break
+        case 3:
+            c.arc(0, 0, 30, 7 * Math.PI / 4, Math.PI / 4)
+            c.lineTo(0,0)
+            break
+    }
+    c.stroke()
+    c.fill()
+    c.closePath()
     c.rotate(player.weaponsDirection)
     c.beginPath()
-    c.strokeStyle = '#d63031'
-    c.lineWidth = 5
+    c.strokeStyle = 'rgba(214, 48, 49, 0.8)'
+    c.lineWidth = 1.5
     c.moveTo(0, 0)
     c.lineTo(0, -30)
     c.stroke()
@@ -380,7 +402,7 @@ function playerRenderPlayerMode(player, playerShip, centerShip) {
     if (playerShip.position.x - centerShip.position.x !== 0 || playerShip.position.y - centerShip.position.y !== 0) {
         c.rotate(playerShip.rotation)
     }
-    if (playerShip.id === centerShip.id) {
+    if (playerShip.id === centerShip.id)  {
         drawPlayerWeapon(player, playerShip)
         drawPlayerName(player, playerShip)
     }
@@ -389,7 +411,36 @@ function playerRenderPlayerMode(player, playerShip, centerShip) {
     animatePlayerRender(player)
     c.restore()
 }
+function drawCargoPlayerMode(cargo, centerShip) {
+    const canvasX = canvas.width / 2 + (cargo.x - centerShip.position.x)
+    const canvasY = canvas.height / 2 + (cargo.y - centerShip.position.y)
+    c.save()
+    c.translate(canvas.width/2, canvas.height/2)
+    c.rotate(-1 * centerShip.rotation)
+    c.translate(-canvas.width/2, -canvas.height/2)
+    c.translate(canvasX, canvasY)
+    c.strokeStyle = '#b2bec3'
+    c.fillStyle = '#b2bec3'
+    c.beginPath()
+    c.arc(0, 0, cargo.radius, 0, 2 * Math.PI)
+    c.stroke()
+    c.fill()
+    c.restore()
+}
+function drawCargoPilotMode(cargo, centerShip) {
+    const canvasX = canvas.width / 2 + (cargo.x - centerShip.position.x)
+    const canvasY = canvas.height / 2 + (cargo.y - centerShip.position.y)
+    c.save()
+    c.translate(canvasX, canvasY)
+    c.strokeStyle = '#b2bec3'
+    c.fillStyle = '#b2bec3'
+    c.beginPath()
+    c.arc(0, 0, cargo.radius, 0, 2 * Math.PI)
+    c.stroke()
+    c.fill()
 
+    c.restore()
+}
 function weaponsMode(playerShip, rotation) {
     const canvasX = canvas.width / 2
     const canvasY = canvas.height / 2 - (10 * playerShip.shipblock)
@@ -470,9 +521,35 @@ function shipDraw(ship) {
         }
     }
 }
-// this function renders ships in player view
+function drawLabels(ship, player) {
+    const left_most_x = -1 * (5 * ship.shipblock)
+    const left_most_y = -1 * (5 * ship.shipblock)
+    for (const key_map of Object.keys(ship_map.map)) {
+
+        const sp = key_map.split("-")
+        const start_x = left_most_x + (parseInt(sp[0]) * ship.shipblock)
+        const start_y = left_most_y+ (parseInt(sp[1]) * ship.shipblock)
+        const pos = {x: parseInt(sp[0]), y: parseInt(sp[1])}
+        c.fillStyle = "white"
+        c.font = "10px Antonio"
+        c.textAlign = 'center'
+        if (pos.x === 8 && pos.y === 2 && posDistanceCalc(pos, player.position) <= 2) {
+            c.fillText("Tactical", start_x + ship.shipblock/2, start_y - (5/4) * ship.shipblock)
+        }
+        else if (pos.x === 8 && pos.y === 6 && posDistanceCalc(pos, player.position) <= 2) { 
+            c.fillText("Transport", start_x + ship.shipblock/2, start_y - (5/4) * ship.shipblock)
+        }
+        else if (pos.x === 3 && pos.y === 6 && posDistanceCalc(pos, player.position) <= 2) {
+            c.fillText("Cargo", start_x + ship.shipblock/2, start_y - (5/4) * ship.shipblock)
+        }
+        else if (pos.x === 1 && pos.y === 2 && posDistanceCalc(pos, player.position) <= 2) {
+            c.fillText("Helm", start_x + ship.shipblock/2, start_y - (5/4) * ship.shipblock)
+        }
+    }
+}
+// this function renders ships in playsaer view
 // centerShip is a reference to whichever ship the player is currently on
-function shipRenderPlayerMode(ship, centerShip) {
+function shipRenderPlayerMode(ship, centerShip, player) {
     const canvasX = canvas.width / 2 + (ship.position.x - centerShip.position.x)
     const canvasY = canvas.height / 2 + (ship.position.y - centerShip.position.y)
     c.save()
@@ -490,6 +567,7 @@ function shipRenderPlayerMode(ship, centerShip) {
     c.arc(0,0,ship.radius,0, 2* Math.PI)
     c.fill()
     shipDraw(ship)
+    drawLabels(ship, player)
     c.restore()
 }
 
@@ -531,27 +609,38 @@ export function animate() {
     if (this.me.playerView) {
         renderStarsPlayerMode(playerShip)
         for (const ship in this.ships) {
-            shipRenderPlayerMode(this.ships[ship], playerShip)
+            if (distanceCalc(playerShip, this.ships[ship]) < 1500) {
+                shipRenderPlayerMode(this.ships[ship], playerShip, this.me)
+            }
         }
 
         for (const player in this.players) {
-            playerRenderPlayerMode(this.players[player], this.ships[this.players[player].currentShip], playerShip)
+            if (distanceCalc(playerShip, this.ships[this.players[player].currentShip]) < 1500) {
+                playerRenderPlayerMode(this.players[player], this.ships[this.players[player].currentShip], playerShip)
+            }
         }
         for (const laser of this.playerlasers) {
             if (laser.ship === this.me.currentShip) {
                 drawPlayerLaser(laser, playerShip)
             }
         }
-        // menu rendering stack goes here
-        if (menustack.length >= 1) {
-            menuRender(menustack[menustack.length - 1], this)
+        for (const cargo of this.cargo) {
+            if (distanceCalcCargo(playerShip, cargo) < 1500) {
+                drawCargoPlayerMode(cargo, playerShip)
+            }
         }
         if (this.weaponsMode) {
             weaponsMode(playerShip, this.weaponsAngle)
         }
         for (const laser of this.shiplasers) {
-            laserRenderPlayerMode(laser, playerShip)
+            if (distanceCalc(playerShip, laser) < 1500) {
+                laserRenderPlayerMode(laser, playerShip)
+            }
         }
+        // menu rendering stack goes here
+        if (menustack.length >= 1) {
+            menuRender(menustack[menustack.length - 1], this)
+        }  
         
         if (playerShip.shieldsDownBurn > 0) {
             shieldsDown()
@@ -560,13 +649,24 @@ export function animate() {
     else {
         renderStars(playerShip)
         for (const ship in this.ships) {
-            shipRenderPilotMode(this.ships[ship], playerShip)
+            if (distanceCalc(playerShip, this.ships[ship]) < 1500) {
+                shipRenderPilotMode(this.ships[ship], playerShip)
+            }
         }
         for (const player in this.players) {
-            playerRenderPilotMode(this.players[player], this.ships[this.players[player].currentShip], playerShip)
+            if (distanceCalc(playerShip, this.ships[this.players[player].currentShip]) < 1500) {
+                playerRenderPilotMode(this.players[player], this.ships[this.players[player].currentShip], playerShip)
+            }
+        }
+        for (const cargo of this.cargo) {
+            if (distanceCalcCargo(playerShip, cargo) < 1500) {
+                drawCargoPilotMode(cargo, playerShip)
+            }
         }
         for (const laser of this.shiplasers) {
-            laserRenderPilotMode(laser, playerShip)
+            if (distanceCalc(playerShip, laser) < 1500) {
+                laserRenderPilotMode(laser, playerShip)
+            }
         }
     }
     drawPairCode(this.me.pair)

@@ -4,7 +4,21 @@ import { gamemanager } from "./gamemanager"
 import { gamestate } from "./gamestate"
 import { disablePlayerListener, requestUserDetails, activatePlayerListener } from "./input" 
 const socket = io()
-document.getElementById('play-button').addEventListener('click', requestUserDetails)
+
+const showMulti = () => {
+    document.getElementById('play-menu-buttons').classList.add('hidden')
+    document.getElementById('multiplayer-buttons').classList.remove('hidden')
+    document.getElementById('multiplayer-buttons').classList.add('show')
+}
+const showSingle = () => {
+    document.getElementById('play-menu-buttons').classList.add('hidden')
+    document.getElementById('single-buttons').classList.remove('hidden')
+    document.getElementById('single-buttons').classList.add('show')
+}
+document.getElementById('play-button-single').addEventListener('click', requestUserDetails)
+document.getElementById('play-button-multi').addEventListener('click', requestUserDetails)
+document.getElementById('solo-button').addEventListener('click', showSingle)
+document.getElementById('join-button').addEventListener('click', showMulti)
 socket.on('connect', () => {
     console.log("client connected")
 })
@@ -24,10 +38,12 @@ socket.on('dead',() => {
     disablePlayerListener()
     document.getElementById('play-menu').classList.remove("hidden")
     document.getElementById('game').classList.add("hidden")
+    document.getElementById('leaderboard').classList.add("hidden")
 })
 socket.on('ready', () => {
     document.getElementById('play-menu').classList.add("hidden")
     document.getElementById('game').classList.remove("hidden")
+    document.getElementById('leaderboard').classList.remove("hidden")
     activatePlayerListener()
 })
 socket.on('pairError', () => {

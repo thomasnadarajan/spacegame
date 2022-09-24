@@ -230,13 +230,15 @@ export class transportmenu extends menu {
         const myShip = data.ships[data.me.currentShip]
         let dists = {}
         for (const ship in data.ships) {
-            if (ship != data.me.currentShip) {
+            if (ship != data.me.currentShip && data.ships[ship].shield === 0) {
                 dists[ship] = distanceCalc(myShip, data.ships[ship])
             }
         }
         const sortedArr = Object.entries(dists).sort(([, v1], [, v2]) => v1 - v2)
         for (let i = 0; i < sortedArr.length && i < 4; i++) {
-            this.shipList.push(sortedArr[i][0])
+                if (sortedArr[i][1] < 1700) {
+                    this.shipList.push(sortedArr[i][0])
+                }
         }
         var found = false
         for (const ship of this.shipList) {

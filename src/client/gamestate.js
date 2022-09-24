@@ -10,6 +10,8 @@ export class gamestate {
         // a list of all the lasers in flight
         this.shiplasers = data.shiplasers
         this.playerlasers = data.playerlasers
+        this.cargo = data.cargo
+        this.leaderboard = data.leaderboard
     }
 
 }

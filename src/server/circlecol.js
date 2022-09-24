@@ -1,4 +1,4 @@
-import { distanceCalc } from "../shared/distance"
+import { distanceCalc, distanceCalcCargo } from "../shared/distance"
 export const rectangleOverlap = (l1, r1, l2, r2) => {
     if (l1.x == r1.x || l1.y == r1.y || r2.x == l2.x || l2.y == r2.y) {
         return false;
@@ -25,6 +25,13 @@ export const circleCollision = (ship1, ship2, laser) => {
         }
         return false
     }
+}
+
+export const cargoCollide = (ship, cargo) => {
+    if (distanceCalcCargo(ship, cargo) < ship.radius + cargo.radius) {
+        return true
+    }
+    return false
 }
 const circleRect = ( cx,  cy,  radius,  rx,  ry,  rw,  rh) => {
 

@@ -13,8 +13,8 @@ export class laser {
         this.ship = ship.id
     }
     update() {
-        this.x += 2 * Math.sin(this.totalrotation)
-        this.y -= 2* Math.cos(this.totalrotation)
+        this.x += 4 * Math.sin(this.totalrotation)
+        this.y -= 4 * Math.cos(this.totalrotation)
         this.position = {x: this.x, y: this.y}
     }
     setDestroyed() {

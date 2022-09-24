@@ -1,5 +1,6 @@
 import {game} from './index'
 import {throttle} from 'throttle-debounce'
+import { ship } from '../shared/ship'
 
 
 const mouseMove = (e) => {
@@ -98,7 +99,7 @@ const weaponsDirectionListener = (e) => {
     throttle(20, game.handleWeaponsMove(newdir))
 }
 const playerWeaponsListener = (e) => {
-    const newdir = Math.atan2(e.x - window.innerWidth / 2, window.innerHeight / 2 - e.y)
+    const newdir = Math.atan2(e.x - (window.innerWidth / 2 - (5 * ship.block) + game.currentState.me.worldPosition.x), (window.innerHeight / 2 - (5 * ship.block) + game.currentState.me.worldPosition.y)- e.y)
     throttle(20, game.handlePlayerWeaponsDirection(newdir))
 }
 const playerWeaponsFire = (e) => {

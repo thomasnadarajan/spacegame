@@ -22,6 +22,14 @@ export class gamemanager {
         else {
             enableMouseDirection()
         }
+        const rows = document.querySelectorAll('#leaderboard table tr');
+        const data = this.currentState.leaderboard.leaderboard
+        for (let i = 0; i < data.length; i++) {
+            rows[i + 1].innerHTML = `<td>${data[i].pair}</td><td>${data[i].score}</td>`;
+        }
+        for (let i = data.length; i < 5; i++) {
+        rows[i + 1].innerHTML = '<td>-</td><td>-</td>';
+        }
     }
     updateMousePosition(x, y) {
         const currentMenu = menustack[menustack.length - 1]

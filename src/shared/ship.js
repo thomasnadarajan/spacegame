@@ -99,15 +99,22 @@ export class ship {
         if (this.shieldsDownBurn > 0) {
             this.shieldsDownBurn--
         }
+        else {
+            this.shield = Math.min(this.systems.shields * 20, this.shield + 1)
+        }
         if (this.moving) {
-            this.position.x += 2 * Math.sin(this.rotation) * this.systems.engines / 2
-            this.position.y -= 2 * Math.cos(this.rotation) * this.systems.engines / 2
-            for (const s in ships) {
-                if (s != this.id) {
-                    if (col(this, ships[s])) {
-                        this.position.x -= 2 * Math.sin(this.rotation) * this.systems.engines / 2
-                        this.position.y += 2 * Math.cos(this.rotation) * this.systems.engines / 2
-                        break
+            const new_x = this.position.x + (2 * Math.sin(this.rotation) * this.systems.engines / 2)
+            const new_y = this.position.y - (2 * Math.cos(this.rotation) * this.systems.engines / 2)
+            if (new_x >= 0 && new_x <= 10000 && new_y >= 0 && new_y <= 10000) {
+                this.position.x += 2 * Math.sin(this.rotation) * this.systems.engines / 2
+                this.position.y -= 2 * Math.cos(this.rotation) * this.systems.engines / 2
+                for (const s in ships) {
+                    if (s != this.id) {
+                        if (col(this, ships[s])) {
+                            this.position.x -= 2 * Math.sin(this.rotation) * this.systems.engines / 2
+                            this.position.y += 2 * Math.cos(this.rotation) * this.systems.engines / 2
+                            break
+                        }
                     }
                 }
             }
@@ -125,7 +132,7 @@ export class ship {
         if (this.shield > 0) {
             this.shield = Math.max(0, this.shield -laser.power)
             if (this.shield === 0) {
-                this.shieldsDownBurn = 40
+                this.shieldsDownBurn = 200
             }
         }
         else  {

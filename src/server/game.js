@@ -1,7 +1,9 @@
 import {player} from '../shared/player'
 import {ship} from '../shared/ship'
 import {shiplaser, playerlaser} from '../shared/laser'
-import { circleCollision, playerCollide, worldCollide } from './circlecol'
+import { cargoCollide, circleCollision, playerCollide, worldCollide } from './circlecol'
+import {cargo} from '../shared/cargo'
+import { leaderboard } from '../shared/leaderboard'
 export class game {
     constructor() {
         this.sockets ={}
@@ -14,10 +16,13 @@ export class game {
         // a list of all the lasers in flight
         this.shiplasers = []
         this.playerlasers = []
-        
+        this.cargo = []
         this.lastUpdate = Date.now()
         this.shouldSendUpdate = false
         this.cargoRequests = {}
+        this.counter = 0
+        this.leaderboard = new leaderboard()
+        this.deleting = false
         setInterval(this.update.bind(this), 1000/60)
     }
     addConnection(socket) {
@@ -145,6 +150,11 @@ export class game {
     }
     update(){
         if (this.shouldSendUpdate) {
+            for (const laser of this.shiplasers) {
+                if (laser.x < 0 || laser.x > 50000 || laser.y < 0 || laser.y > 50000) {
+                    laser.setDestroyed()
+                }
+            }
             this.shiplasers = this.shiplasers.filter(laser => !laser.destroyed)
             this.playerlasers = this.playerlasers.filter(laser => !laser.destroyed)
             this.checkShipDestroy()
@@ -169,13 +179,19 @@ export class game {
             for (const laser of this.playerlasers) {
                 laser.update()
             }
-            for (const laser of this.shiplasers) {
-                for (const ship in this.ships) {
+            for (const ship in this.ships) {
+                for (const laser of this.shiplasers) {
                     if (laser.ship !== this.ships[ship].id) {
                         if (circleCollision(this.ships[ship], null, laser)) {
                             this.ships[ship].hit(laser)
                             laser.setDestroyed()
                         }
+                    }
+                }
+                for (const cargo of this.cargo) {
+                    if (cargoCollide(this.ships[ship], cargo)) {
+                        this.ships[ship].cargo += cargo.cargo
+                        this.cargo.splice(this.cargo.indexOf(cargo), 1)
                     }
                 }
             }
@@ -203,6 +219,9 @@ export class game {
                         break
                     }
                 }
+            }
+            if (this.cargo.length < 10) {
+                this.cargoGenerator()
             }
             var markedTransports = []
             for (const transport in this.cargoRequests) {
@@ -246,12 +265,29 @@ export class game {
           }
     }
     generateGameUpdate(me) {
+        var lead = this.leaderboard
+        if (!this.deleting) {
+            lead = new leaderboard()
+            let pairscores = []
+            
+            for (const pair in this.pairs) {
+                let ob = {pair: pair, score: this.ships[this.pairs[pair].ship].cargo}
+                pairscores.push(ob)
+            }
+            pairscores.sort((a, b) => b.score - a.score)
+            for (let i = 0 ; i < pairscores.length && i < 5; i++) {
+                lead.addPair(pairscores[i].pair, pairscores[i].score)
+            }
+            this.leaderboard = lead
+        }
         const update = {
             me: me,
             players: this.players,
             ships: this.ships,
             shiplasers: this.shiplasers,
-            playerlasers: this.playerlasers
+            playerlasers: this.playerlasers,
+            cargo: this.cargo,
+            leaderboard: lead
         }
         return update
     }
@@ -296,7 +332,12 @@ export class game {
     cancelTransportRequest(data) {
         delete this.cargoRequests[data.source]
     }
-
+    cargoGenerator() {
+        const total = Math.random() * (51  - 25) + 25
+        for (let i = 0; i < total; i++) {
+            this.cargo.push(new cargo(10000, 10000))
+        }
+    }
     disconnect(socket) {
         const playerID = socket.id;
         delete this.sockets[playerID];
@@ -308,13 +349,19 @@ export class game {
                 delete this.ships[currentShip]
             }
         }
+        this.deleting = true
+        let deletePairs = []
         for (const pair in this.pairs) {
-            if (playerID in this.pairs[pair]) {
-                this.pairs[pair].splice(this.pairs[pair].indexOf(playerID), 1)
-                if (this.pairs[pair].length === 1) {
-                    delete this.pairs[pair]
+            if (this.pairs[pair].players.includes(playerID.toString())) {
+                this.pairs[pair].players.splice(this.pairs[pair].players.indexOf(playerID), 1)
+                if (this.pairs[pair].players.length === 0) {
+                    deletePairs.push(pair)
                 }
             }
         }
+        for (const p of deletePairs) {
+            delete this.pairs[p]
+        }
+        this.deleting = false
     }
 }   
