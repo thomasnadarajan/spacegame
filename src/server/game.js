@@ -138,14 +138,27 @@ export class game {
         this.playerlasers.push(new playerlaser(x, y, rot, p, s))
     }
     checkShipDestroy() {
+        let marked_pairs= []
+        let marked_ships = []
         for (const ship in this.ships) {
             if (this.ships[ship].hull <= 0) {
-                for (const player of this.ships[ship].players) {
-                    delete this.players[player]
-                    this.sockets[player].emit('dead')
+                for (const pair in this.pairs) {
+                    if (this.pairs[pair].ship === parseInt(ship)) {
+                        marked_pairs.push(pair)
+                        for (const player of this.pairs[pair].players) {
+                            delete this.players[player]
+                            this.sockets[player].emit('dead')
+                        }
+                    }
                 }
-                delete this.ships[ship]
+                marked_ships.push(ship)
             }
+        }
+        for (const ship of marked_ships) {
+            delete this.ships[ship]
+        }
+        for (const pair of marked_pairs) {
+            delete this.pairs[pair]
         }
     }
     update(){
