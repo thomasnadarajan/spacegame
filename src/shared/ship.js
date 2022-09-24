@@ -100,7 +100,7 @@ export class ship {
             this.shieldsDownBurn--
         }
         else {
-            this.shield = Math.min(this.systems.shields * 20, this.shield + 1)
+            this.shield = Math.min(this.systems.shields * 20, this.shield + 0.05)
         }
         if (this.moving) {
             const new_x = this.position.x + (2 * Math.sin(this.rotation) * this.systems.engines / 2)

@@ -547,6 +547,23 @@ function drawLabels(ship, player) {
         }
     }
 }
+function drawHealthShield(ship) {
+    c.fillStyle = 'white';
+    c.fillRect(
+        - ship.radius,
+        ship.radius + 0.25 * ship.radius,
+        ship.radius * 2,
+        ship.radius * 0.2,
+    );
+    c.fillStyle = '#74b9ff';
+    console.log((ship.systems.shields * 20))
+    c.fillRect(
+        - ship.radius,
+        ship.radius + 0.25 * ship.radius,
+        ship.radius * 2 * (ship.shield / (ship.systems.shields * 20)),
+        ship.radius * 0.2,
+      );
+}
 // this function renders ships in playsaer view
 // centerShip is a reference to whichever ship the player is currently on
 function shipRenderPlayerMode(ship, centerShip, player) {
@@ -560,6 +577,13 @@ function shipRenderPlayerMode(ship, centerShip, player) {
     }
     c.translate(canvasX, canvasY)
     if (ship.position.x - centerShip.position.x !== 0 || ship.position.y - centerShip.position.y !== 0) {
+        c.rotate(centerShip.rotation)
+    }
+    drawHealthShield(ship)
+    if (ship.position.x - centerShip.position.x !== 0 || ship.position.y - centerShip.position.y !== 0) {
+        c.rotate(-centerShip.rotation)
+    }
+    if (ship.position.x - centerShip.position.x !== 0 || ship.position.y - centerShip.position.y !== 0) {
         c.rotate(ship.rotation)
     }
     c.beginPath()
@@ -567,7 +591,10 @@ function shipRenderPlayerMode(ship, centerShip, player) {
     c.arc(0,0,ship.radius,0, 2* Math.PI)
     c.fill()
     shipDraw(ship)
-    drawLabels(ship, player)
+    if (ship.id === centerShip.id) {
+        drawLabels(ship, player)
+    }
+    
     c.restore()
 }
 
@@ -578,6 +605,7 @@ function shipRenderPilotMode(ship, centerShip) {
     const canvasY = canvas.height / 2 + (ship.position.y - centerShip.position.y)
     c.save()
     c.translate(canvasX, canvasY)
+    drawHealthShield(ship)
     c.rotate(ship.rotation)
     c.beginPath()
     c.fillStyle = "#2d3436"
@@ -585,6 +613,7 @@ function shipRenderPilotMode(ship, centerShip) {
     c.fill()
     shipDraw(ship)
     c.restore()
+    c.save()
 }
 function shieldsDown() {
     c.textAlign = 'center'
