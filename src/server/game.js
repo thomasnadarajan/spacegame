@@ -61,14 +61,13 @@ export class game {
 
         }
         else {
-            // Eventually we will do type checking/cleansing client side.
             const pair_proper = parseInt(pair)
             if (pair_proper in this.pairs) {
                 const parentShip = this.ships[this.pairs[pair_proper].ship]
+                this.pairs[pair_proper].players.push(socket.id)
                 for (let i = 0; i < 10; i++) {
                     for (let j = 0; j < 10; j++) { 
                         if (ship.grid[i][j] === 1 && parentShip.playerGrid[i][j] === 0) {
-                            this.usernames.push(player_user)
                             this.players[socket.id] = new player(player_user, parentShip, i, j, pair_proper)
                             parentShip.addPlayer(socket.id)
                             socket.emit('ready')
