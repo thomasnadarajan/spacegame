@@ -64,6 +64,12 @@ io.on('connection', socket => {
     socket.on('stopDirection', data => {
       g.stopDirection(socket.id, data)
     })
+    socket.on('timeout', () => {
+      g.addTimeout(socket.id)
+    })
+    socket.on('cancelTimeout', () => {
+      g.cancelTimeout(socket.id)
+    })
 })
 httpServer.listen(PORT)
 

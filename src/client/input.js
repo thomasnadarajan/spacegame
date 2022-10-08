@@ -84,13 +84,14 @@ addEventListener('resize', () => {
 
 export const requestUserDetails = () => {
     
-    const user = document.getElementById('username-input').value
+    const userMulti = document.getElementById('username-input').value
+    const userSolo = document.getElementById('username-input-solo').value
     const pair = document.getElementById('pair-input').value
-    if (pair === '') {
-        game.addPlayer(user, null)
+    if (pair === '' && userSolo !== '') {
+        game.addPlayer(userSolo, null)
     }
-    else {
-        game.addPlayer(user, pair)
+    else if (pair !== '' && userMulti !== '') {
+        game.addPlayer(userMulti, pair)
     }
 }
 

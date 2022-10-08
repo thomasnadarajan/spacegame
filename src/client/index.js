@@ -24,7 +24,14 @@ socket.on('connect', () => {
 })
 export const game = new gamemanager(socket)
 export var stars = []
-var lastUpdate = null
+const restore = () => {
+    game.currentState = null
+    game.cancelAnimationFrame()
+    disablePlayerListener()
+    document.getElementById('play-menu').classList.remove("hidden")
+    document.getElementById('game').classList.add("hidden")
+    document.getElementById('leaderboard').classList.add("hidden")
+}
 socket.on('stars', (data) => {stars = data})
 socket.on('update', (data) => {
     if (data.me != null) {
@@ -33,14 +40,10 @@ socket.on('update', (data) => {
     }
 })
 socket.on('dead',() => {
-    game.currentState = null
-    game.cancelAnimationFrame()
-    disablePlayerListener()
-    document.getElementById('play-menu').classList.remove("hidden")
-    document.getElementById('game').classList.add("hidden")
-    document.getElementById('leaderboard').classList.add("hidden")
+    restore()
 })
 socket.on('ready', () => {
+    console.log('gets here')
     document.getElementById('play-menu').classList.add("hidden")
     document.getElementById('game').classList.remove("hidden")
     document.getElementById('leaderboard').classList.remove("hidden")
@@ -54,9 +57,20 @@ socket.on('userError', () => {
     document.getElementById('error').classList.remove("hidden")
     document.getElementById('error').innerHTML = "Username already exists"
 })
+socket.on('timedOut', () => {
+    restore()
+})
 const disconnect = () => {
     socket.emit('disconnect')
 }
 
 setCanvasDims()
 addEventListener('beforeunload', disconnect)
+addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        socket.emit('timeout')
+    }
+    else {
+        socket.emit('cancelTimeout')
+    }
+})

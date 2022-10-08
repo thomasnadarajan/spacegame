@@ -23,7 +23,17 @@ export class game {
         this.counter = 0
         this.leaderboard = new leaderboard()
         this.deleting = false
+        this.timeouts = {}
         setInterval(this.update.bind(this), 1000/60)
+    }
+    addTimeout(socket) {
+        this.timeouts[socket] = setTimeout(() => {
+            this.sockets[socket].emit('timedOut')
+            this.disconnect(this.sockets[socket], false)
+        }, 5000)
+    }
+    cancelTimeout(socket) {
+        clearTimeout(this.timeouts[socket])
     }
     addConnection(socket) {
         this.sockets[socket.id] = socket
@@ -350,9 +360,11 @@ export class game {
             this.cargo.push(new cargo(10000, 10000))
         }
     }
-    disconnect(socket) {
+    disconnect(socket, hard = true) {
         const playerID = socket.id;
-        delete this.sockets[playerID];
+        if (hard === true) {
+            delete this.sockets[playerID];
+        }
         if (playerID in this.players) {
             const currentShip = this.players[playerID].currentShip;
             delete this.players[playerID];
