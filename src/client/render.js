@@ -559,7 +559,7 @@ function drawHealthShield(ship) {
     c.fillStyle = 'white';
     c.fillRect(
         - ship.radius,
-        ship.radius + 0.2 * ship.radius,
+        ship.radius + 0.15 * ship.radius,
         ship.radius * 2,
         ship.radius * 0.1,
     );
@@ -567,7 +567,7 @@ function drawHealthShield(ship) {
     console.log((ship.systems.shields * 20))
     c.fillRect(
         - ship.radius,
-        ship.radius + 0.2 * ship.radius,
+        ship.radius + 0.15 * ship.radius,
         ship.radius * 2 * (ship.shield / (ship.systems.shields * 20)),
         ship.radius * 0.1,
       );
