@@ -524,6 +524,7 @@ function shipDraw(ship) {
 function drawLabels(ship, player) {
     const left_most_x = -1 * (5 * ship.shipblock)
     const left_most_y = -1 * (5 * ship.shipblock)
+    var near = false
     for (const key_map of Object.keys(ship_map.map)) {
 
         const sp = key_map.split("-")
@@ -535,16 +536,23 @@ function drawLabels(ship, player) {
         c.textAlign = 'center'
         if (pos.x === 8 && pos.y === 2 && posDistanceCalc(pos, player.position) <= 2) {
             c.fillText("Tactical", start_x + ship.shipblock/2, start_y - (5/4) * ship.shipblock)
+            near = true
         }
         else if (pos.x === 8 && pos.y === 6 && posDistanceCalc(pos, player.position) <= 2) { 
             c.fillText("Transport", start_x + ship.shipblock/2, start_y - (5/4) * ship.shipblock)
+            near = true
         }
         else if (pos.x === 3 && pos.y === 6 && posDistanceCalc(pos, player.position) <= 2) {
             c.fillText("Cargo", start_x + ship.shipblock/2, start_y - (5/4) * ship.shipblock)
+            near = true
         }
         else if (pos.x === 1 && pos.y === 2 && posDistanceCalc(pos, player.position) <= 2) {
             c.fillText("Helm", start_x + ship.shipblock/2, start_y - (5/4) * ship.shipblock)
+            near = true
         }
+    }
+    if (near) {
+        return true
     }
 }
 function drawHealthShield(ship) {
@@ -567,6 +575,7 @@ function drawHealthShield(ship) {
 // this function renders ships in playsaer view
 // centerShip is a reference to whichever ship the player is currently on
 function shipRenderPlayerMode(ship, centerShip, player) {
+    var near = false
     const canvasX = canvas.width / 2 + (ship.position.x - centerShip.position.x)
     const canvasY = canvas.height / 2 + (ship.position.y - centerShip.position.y)
     c.save()
@@ -592,10 +601,17 @@ function shipRenderPlayerMode(ship, centerShip, player) {
     c.fill()
     shipDraw(ship)
     if (ship.id === centerShip.id) {
-        drawLabels(ship, player)
+        near = drawLabels(ship, player)
     }
     
     c.restore()
+    if (near) {
+        console.log('returns true')
+        c.fillStyle = "white"
+        c.textAlign = 'left'
+        c.font = "20px Antonio"
+        c.fillText("Press Q to interact", canvas.width * 1/16, canvas.height - canvas.height * 1/12)
+    }
 }
 
 // this is the rendering setup for pilot mode
