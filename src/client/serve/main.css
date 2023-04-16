@@ -105,6 +105,11 @@ html, body {
     text-align: center;
     padding: 2px 5px;
   }
+
+  #multiplayer-buttons input {
+    display: block;
+    margin-bottom: 10px;
+}
   .container > button {
     float: center;
     text-align: center;
