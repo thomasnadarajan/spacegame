@@ -292,6 +292,7 @@ function drawPlayerWeapon(player, playerShip) {
     c.moveTo(0, 0)
     c.lineTo(0, -30)
     c.stroke()
+    c.closePath()
     c.rotate(-player.weaponsDirection)
     c.translate(-x, -y)
 }
