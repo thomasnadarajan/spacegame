@@ -19,6 +19,18 @@ document.getElementById('play-button-single').addEventListener('click', requestU
 document.getElementById('play-button-multi').addEventListener('click', requestUserDetails)
 document.getElementById('solo-button').addEventListener('click', showSingle)
 document.getElementById('join-button').addEventListener('click', showMulti)
+document.getElementById("back-button").addEventListener("click", () => {
+    document.getElementById("multiplayer-buttons").classList.remove('show')
+  document.getElementById("multiplayer-buttons").classList.add('hidden')
+  document.getElementById('play-menu-buttons').classList.remove('hidden')
+  document.getElementById('play-menu-buttons').classList.add('show')
+})
+document.getElementById("back-button-solo").addEventListener("click", () => {
+    document.getElementById("single-buttons").classList.remove('show')
+  document.getElementById("single-buttons").classList.add('hidden')
+  document.getElementById('play-menu-buttons').classList.remove('hidden')
+  document.getElementById('play-menu-buttons').classList.add('show')
+})
 socket.on('connect', () => {
     console.log("client connected")
 })
