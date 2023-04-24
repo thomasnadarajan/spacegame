@@ -283,13 +283,13 @@ function drawPlayerWeapon(player, playerShip) {
             c.lineTo(0,0)
             break
     }
+    c.closePath()
     c.stroke()
     c.fill()
-    c.closePath()
     c.rotate(player.weaponsDirection)
     c.beginPath()
     c.strokeStyle = 'rgba(214, 48, 49, 0.8)'
-    c.lineWidth = 10
+    c.lineWidth = 1.5
     c.moveTo(0, 0)
     c.lineTo(0, -30)
     c.stroke()
