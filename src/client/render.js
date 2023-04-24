@@ -317,6 +317,7 @@ function drawPlayerLaser(l, ship) {
     c.arc(0,0,l.radius * 3/4,0, 2* Math.PI)
     c.fill()
     c.stroke()
+    c.closePath()
     c.restore()
 }
 
@@ -373,6 +374,7 @@ function animatePlayerRender(player) {
             c.fill()
             break
     }
+    c.closePath()
 
 }
 function playerRenderPilotMode(player, playerShip, centerShip) {
@@ -408,7 +410,6 @@ function playerRenderPlayerMode(player, playerShip, centerShip) {
         drawPlayerName(player, playerShip)
     }
     
-    //c.drawImage(player_mats, 16 + (player.animation * 64), 15 + (player.direction * 64), 32, 46, -(5 * playerShip.shipblock) + player.worldPosition.x, -(5 * playerShip.shipblock) + player.worldPosition.y, player.width, player.height)
     animatePlayerRender(player)
     c.restore()
 }
