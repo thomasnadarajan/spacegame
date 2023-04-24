@@ -55,7 +55,6 @@ socket.on('dead',() => {
     restore()
 })
 socket.on('ready', () => {
-    console.log('gets here')
     document.getElementById('play-menu').classList.add("hidden")
     document.getElementById('game').classList.remove("hidden")
     document.getElementById('leaderboard').classList.remove("hidden")

@@ -33,7 +33,6 @@ const directionIn = (e) => {
 }
 const stopDirection = (e) => {
     if (e.repeat) {
-        console.log('gets here')
         return
     }
     switch (e.key) {

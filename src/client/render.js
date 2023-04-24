@@ -566,7 +566,6 @@ function drawHealthShield(ship) {
         ship.radius * 0.1,
     );
     c.fillStyle = '#74b9ff';
-    console.log((ship.systems.shields * 20))
     c.fillRect(
         - ship.radius,
         ship.radius + 0.15 * ship.radius,
@@ -608,7 +607,6 @@ function shipRenderPlayerMode(ship, centerShip, player) {
     
     c.restore()
     if (near) {
-        console.log('returns true')
         c.fillStyle = "white"
         c.textAlign = 'left'
         c.font = "20px Antonio"
