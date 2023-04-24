@@ -288,7 +288,7 @@ function drawPlayerWeapon(player, playerShip) {
     c.rotate(player.weaponsDirection)
     c.beginPath()
     c.strokeStyle = 'rgba(214, 48, 49, 0.8)'
-    c.lineWidth = 1.5
+    c.lineWidth = 10
     c.moveTo(0, 0)
     c.lineTo(0, -30)
     c.stroke()
