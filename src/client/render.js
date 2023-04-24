@@ -262,6 +262,7 @@ function drawPlayerWeapon(player, playerShip) {
     const y = -(5 * playerShip.shipblock) + player.worldPosition.y + player.height / 2
     c.fillStyle = 'rgba(214, 48, 49, 0.2)'
     c.strokeStyle = 'rgba(214, 48, 49, 0.2)'
+    c.lineWidth = 1
     c.translate(x, y)
     c.beginPath()
     switch(player.direction) {
