@@ -6,6 +6,12 @@ import {game} from './game'
 import {star} from '../shared/star'
 const app = express()
 const PORT = process.env.PORT || 8081
+
+// Debug logging
+console.log(`Configured to use PORT: ${PORT}`)
+console.log(`Environment PORT: ${process.env.PORT}`)
+console.log(`NODE_ENV: ${process.env.NODE_ENV}`)
+
 const httpServer = createServer(app)
 const io = new Server(httpServer, {
   cors: {
@@ -23,6 +29,11 @@ for (let i = 0; i < 25000; i++) {
 }
 
 app.use(express.static(path.resolve('./src/client/serve')))
+
+// Route to check server status
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', port: PORT });
+});
 
 console.log('server running!')
 
@@ -99,7 +110,9 @@ io.on('connection', async (socket) => {
       g.cancelTimeout(socket.id)
     })
 })
-httpServer.listen(PORT)
+httpServer.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${PORT}`)
+})
 
 
 
