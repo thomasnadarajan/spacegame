@@ -20,9 +20,9 @@ export class RedisManager {
                 NODE_ENV: process.env.NODE_ENV
             });
             
-            // Use environment variables with fallback
+            // Use environment variables - no hardcoded fallback
             const redisConfig = {
-                host: process.env.REDIS_ENDPOINT || 'spacegame-redis-uswest2.ikrael.0001.usw2.cache.amazonaws.com',
+                host: process.env.REDIS_ENDPOINT,
                 port: parseInt(process.env.REDIS_PORT || '6379'),
                 connectTimeout: 10000,
                 retryStrategy: (times) => {
