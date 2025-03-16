@@ -4,6 +4,8 @@ import {shiplaser, playerlaser} from '../shared/laser'
 import { cargoCollide, circleCollision, playerCollide, worldCollide } from './circlecol'
 import {cargo} from '../shared/cargo'
 import { leaderboard } from '../shared/leaderboard'
+import { RedisManager } from './redisManager'
+
 export class game {
     constructor() {
         this.sockets ={}
@@ -24,8 +26,40 @@ export class game {
         this.leaderboard = new leaderboard()
         this.deleting = false
         this.timeouts = {}
-        setInterval(this.update.bind(this), 1000/60)
+        
+        // Initialize Redis manager
+        this.redisManager = new RedisManager()
+        
+        // Initialize game state properly
+        this.initializeGameState().catch(err => {
+            console.error('Failed to initialize game state:', err)
+        })
     }
+
+    async initializeGameState() {
+        try {
+            console.log('Initializing game state...');
+            
+            // Clear existing Redis state
+            await this.redisManager.clearState();
+            
+            // Load initial state from Redis (which will now be empty)
+            const state = await this.redisManager.getGameState()
+            
+            // Initialize empty game state
+            this.ships = {}
+            this.players = {}
+            this.cargo = []
+            
+            console.log('Game state initialized with empty Redis cache');
+
+            // Start the game loop
+            setInterval(this.update.bind(this), 1000/60)
+        } catch (e) {
+            console.error('Failed to initialize game state:', e)
+        }
+    }
+
     addTimeout(socket) {
         this.timeouts[socket] = setTimeout(() => {
             this.sockets[socket].emit('timedOut')
@@ -38,58 +72,86 @@ export class game {
     addConnection(socket) {
         this.sockets[socket.id] = socket
     }
-    addPlayer(socket, player_user, pair = null) {
-        if(pair === null) {
-            var started = false
-            var ship_built = null
-            var ship_id = Math.floor(1000 + Math.random() * 9000)
-            while (!started) {
-                const x = 5000 * (0.25 + Math.random() * 0.5)
-                const y = 5000 * (0.25 + Math.random() * 0.5)
-                ship_id = Math.floor(1000 + Math.random() * 9000)
-                const temp = new ship(x, y, ship_id)
-                var found = false
-                for (const s in this.ships) {
-                    if (circleCollision(temp, this.ships[s])) {
-                        found = true
-                        break
-                    }
-
-                }
-                if (!found) {
-                    ship_built = temp
-                    started = true
-                }
+    checkCollisions(newShip) {
+        for (const shipId in this.ships) {
+            if (circleCollision(newShip, this.ships[shipId])) {
+                return true;
             }
-            this.ships[ship_id] = ship_built
-            const code = Math.floor(1000 + Math.random() * 9000)
-            this.pairs[code] = {ship: ship_id, players: [socket.id]}
-            this.players[socket.id] = new player(player_user, this.ships[ship_id], 1, 2, code)
-            this.ships[ship_id].addPlayer(socket.id)
-            
-            socket.emit('ready')
-
         }
-        else {
-            const pair_proper = parseInt(pair)
-            if (pair_proper in this.pairs) {
-                const parentShip = this.ships[this.pairs[pair_proper].ship]
-                this.pairs[pair_proper].players.push(socket.id)
-                for (let i = 0; i < 10; i++) {
-                    for (let j = 0; j < 10; j++) { 
-                        if (ship.grid[i][j] === 1 && parentShip.playerGrid[i][j] === 0) {
-                            this.players[socket.id] = new player(player_user, parentShip, i, j, pair_proper)
-                            parentShip.addPlayer(socket.id)
-                            socket.emit('ready')
-                            return
-                        }
-                    }
+        return false;
+    }
+    async addPlayer(user, socket) {
+        try {
+            // Generate random ship position and ID
+            const x = 5000 * (0.25 + Math.random() * 0.5)
+            const y = 5000 * (0.25 + Math.random() * 0.5)
+            const ship_id = Math.floor(1000 + Math.random() * 9000)
+            const temp = new ship(x, y, ship_id)
+            
+            // Check if ship position is valid
+            if (!this.checkCollisions(temp)) {
+                // Create ship first
+                this.ships[ship_id] = temp
+                
+                // Generate a unique pair code if not provided
+                const pair_code = Math.floor(1000 + Math.random() * 9000).toString()
+                
+                // Create player with ship ID and initial position
+                const newPlayer = new player(user, ship_id, 1, 2, pair_code)
+                
+                // Update player's world position based on ship
+                newPlayer.worldPosition = {
+                    x: (newPlayer.position.x * temp.shipblock) - newPlayer.width / 2 + temp.shipblock / 2,
+                    y: (newPlayer.position.y * temp.shipblock) - newPlayer.height / 2 + temp.shipblock / 2
                 }
                 
-            }
-            socket.emit('pairError')
-        }
+                // Store player in game state
+                this.players[socket.id] = newPlayer
+                
+                // Add player to ship's player list
+                this.ships[ship_id].addPlayer(socket.id)
+                
+                // Create or update pair in pairs list
+                this.pairs[pair_code] = {
+                    ship: ship_id,
+                    players: [socket.id]
+                }
+                
+                // Register the pair code with this instance
+                await this.redisManager.registerPairCode(pair_code)
+                
+                // Update leaderboard with initial cargo
+                this.leaderboard.addPair(pair_code, temp.cargo || 0)
+                
+                // Prepare clean player data for Redis
+                const playerData = {
+                    username: user,
+                    position: newPlayer.position,
+                    worldPosition: newPlayer.worldPosition,
+                    health: newPlayer.health,
+                    currentShip: ship_id,
+                    playerView: true,
+                    pair: pair_code,
+                    keys: {}
+                }
+                
+                // Save to Redis
+                await this.redisManager.addPlayer(socket.id, playerData)
 
+                // Send ready event through socket
+                if (socket && typeof socket.emit === 'function') {
+                    socket.emit('ready')
+                }
+                
+                return {
+                    player: newPlayer,
+                    ship: temp
+                }
+            }
+        } catch (e) {
+            console.error('Failed to add player:', e)
+            throw e; // Re-throw to handle in the calling code
+        }
     }
     setShipDirection(player, dir) {
         this.ships[player.currentShip].setRotation(dir)
@@ -170,7 +232,7 @@ export class game {
             delete this.pairs[pair]
         }
     }
-    update(){
+    async update(){
         if (this.shouldSendUpdate) {
             for (const laser of this.shiplasers) {
                 if (laser.x < 0 || laser.x > 50000 || laser.y < 0 || laser.y > 50000) {
@@ -182,18 +244,29 @@ export class game {
             this.checkShipDestroy()
             var markedPlayers = []
             for (const player in this.players) {
-                if (this.players[player].health === 0) {
-                    const p = this.players[player]
-                    this.ships[p.currentShip].removePlayer(player)
-                    markedPlayers.push(player)
+                // Validate that the player's ship exists
+                const currentPlayer = this.players[player];
+                const currentShip = this.ships[currentPlayer.currentShip];
+                
+                if (!currentShip) {
+                    console.error(`Ship ${currentPlayer.currentShip} not found for player ${player}, removing player`);
+                    delete this.players[player];
+                    if (this.sockets[player]) {
+                        this.sockets[player].emit('dead');
+                    }
+                    continue;
                 }
-                else {
-                    this.players[player].health = Math.min(this.players[player].health + 1, this.players[player].health)
+
+                if (currentPlayer.health === 0) {
+                    currentShip.removePlayer(player);
+                    markedPlayers.push(player);
+                } else {
+                    currentPlayer.health = Math.min(currentPlayer.health + 1, currentPlayer.health);
+                    // Only update player if their ship exists and has a cargomap
+                    if (currentShip && currentShip.cargomap) {
+                        currentPlayer.update(currentShip.cargomap);
+                    }
                 }
-            }
-            for (const player of markedPlayers) {
-                delete this.players[player]
-                this.sockets[player].emit('dead')
             }
             for (const laser of this.shiplasers) {
                 laser.update()
@@ -272,19 +345,26 @@ export class game {
             }
             Object.keys(this.sockets).forEach(playerID => {
                 const socket = this.sockets[playerID];
-                if (playerID in this.players) {
+                if (playerID in this.players && this.ships[this.players[playerID].currentShip]) {
                     const player = this.players[playerID];
-                    
                     socket.emit('update', this.generateGameUpdate(player));
-                }
-                else {
+                } else {
                     socket.emit('update', this.generateGameUpdate(null));
                 }
             })
             this.shouldSendUpdate = false;
-          } else {
+            
+            // Sync leaderboard to Redis
+            await this.redisManager.updateLeaderboard(this.leaderboard)
+
+            // Sync complete game state to Redis periodically (every 5 seconds)
+            if (Date.now() - this.lastUpdate > 5000) {
+                await this.syncGameState()
+                this.lastUpdate = Date.now()
+            }
+        } else {
             this.shouldSendUpdate = true;
-          }
+        }
     }
     generateGameUpdate(me) {
         var lead = this.leaderboard
@@ -292,16 +372,38 @@ export class game {
             lead = new leaderboard()
             let pairscores = []
             
-            for (const pair in this.pairs) {
-                let ob = {pair: pair, score: this.ships[this.pairs[pair].ship].cargo}
-                pairscores.push(ob)
+            // Collect all ships and their cargo levels
+            for (const shipId in this.ships) {
+                const ship = this.ships[shipId];
+                // Find if this ship belongs to a pair
+                let pairId = null;
+                for (const pair in this.pairs) {
+                    if (this.pairs[pair].ship === parseInt(shipId)) {
+                        pairId = pair;
+                        break;
+                    }
+                }
+                
+                // If ship belongs to a pair, add its score
+                if (pairId !== null) {
+                    pairscores.push({
+                        pair: pairId,
+                        score: ship.cargo || 0
+                    });
+                }
             }
+            
+            // Sort by score in descending order
             pairscores.sort((a, b) => b.score - a.score)
-            for (let i = 0 ; i < pairscores.length && i < 5; i++) {
+            
+            // Add top 5 scores to leaderboard
+            for (let i = 0; i < pairscores.length && i < 5; i++) {
                 lead.addPair(pairscores[i].pair, pairscores[i].score)
             }
+            
             this.leaderboard = lead
         }
+        
         const update = {
             me: me,
             players: this.players,
@@ -309,14 +411,15 @@ export class game {
             shiplasers: this.shiplasers,
             playerlasers: this.playerlasers,
             cargo: this.cargo,
-            leaderboard: lead
+            leaderboard: lead,
+            pairs: this.pairs // Add pairs to the update so client knows about pair assignments
         }
         return update
     }
 
-    movePlayer(player, s = null){
+    async movePlayer(player, s = null) {
         const p = this.players[player]
-        if (s!== null) {
+        if (s !== null) {
             for (const position of ship.type['transport']) {
                 const found = false
                 for (const play of this.ships[s].players) {
@@ -331,7 +434,15 @@ export class game {
                     this.ships[s].addPlayer(player)
                 }
             }
-            
+        }
+        
+        // Update Redis with new position
+        if (p && p.position) {
+            await this.redisManager.updatePlayerPosition(player, {
+                x: p.position.x,
+                y: p.position.y,
+                rotation: p.direction || 0
+            })
         }
     }
     usePlayer(player) {
@@ -360,7 +471,23 @@ export class game {
             this.cargo.push(new cargo(10000, 10000))
         }
     }
-    disconnect(socket, hard = true) {
+    async disconnect(socket, hard = true) {
+        // Remove from Redis first
+        if (this.players[socket.id]) {
+            await this.redisManager.removePlayer(socket.id)
+            
+            // Get the player's pair code
+            const playerPairCode = this.players[socket.id].pair;
+            
+            // If this was the last player with this pair code, remove it from instance tracking
+            if (playerPairCode && this.pairs[playerPairCode]) {
+                const pair = this.pairs[playerPairCode];
+                if (pair.players.length <= 1) {
+                    await this.redisManager.removePairCode(playerPairCode);
+                }
+            }
+        }
+        
         const playerID = socket.id;
         if (hard === true) {
             delete this.sockets[playerID];
@@ -387,5 +514,52 @@ export class game {
             delete this.pairs[p]
         }
         this.deleting = false
+    }
+
+    async syncGameState() {
+        try {
+            // Prepare data for Redis storage
+            const gameState = {
+                players: Object.entries(this.players).reduce((acc, [id, playerInstance]) => {
+                    acc[id] = {
+                        id: id,
+                        username: playerInstance.user,
+                        position: playerInstance.position,
+                        health: playerInstance.health,
+                        currentShip: playerInstance.currentShip,
+                        playerView: playerInstance.playerView,
+                        pair: playerInstance.pair,
+                        keys: playerInstance.keys || {},
+                        worldPosition: playerInstance.worldPosition
+                    }
+                    return acc
+                }, {}),
+                ships: Object.entries(this.ships).reduce((acc, [id, shipInstance]) => {
+                    acc[id] = {
+                        id: parseInt(id),
+                        position: shipInstance.position,
+                        rotation: shipInstance.rotation,
+                        hull: shipInstance.hull,
+                        cargo: shipInstance.cargo,
+                        players: shipInstance.players,
+                        systems: shipInstance.systems,
+                        moving: shipInstance.moving,
+                        shipblock: shipInstance.shipblock
+                    }
+                    return acc
+                }, {}),
+                cargo: this.cargo.map(cargoInstance => ({
+                    x: cargoInstance.x,
+                    y: cargoInstance.y,
+                    cargo: cargoInstance.cargo
+                })),
+                leaderboard: this.leaderboard
+            }
+
+            // Sync to Redis
+            await this.redisManager.updateGameState(gameState)
+        } catch (err) {
+            console.error('Failed to sync game state:', err)
+        }
     }
 }   

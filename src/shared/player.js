@@ -1,26 +1,29 @@
 import {ship} from '../shared/ship'
 export class player {
     constructor(user, parentShip, x, y, pair) {
-
         this.user = user
-        // this will ultimately just store the id for the ship from which the player originates
-        this.parentShip = parentShip.id
-        // the ship the player is currently on
-        this.currentShip = parentShip.id
-        // determine whether the player is to be rendered in ship view or player view
+        // Store only the ship ID, not the entire ship object
+        this.parentShip = typeof parentShip === 'object' ? parentShip.id : parentShip
+        // Store only the ship ID
+        this.currentShip = typeof parentShip === 'object' ? parentShip.id : parentShip
+        
+        // Calculate initial position based on ship block size if ship object provided
+        const shipBlock = parentShip.shipblock || 40 // Default block size if not provided
+        
         this.playerView = true
-        // this is the position within the ship's internal grid
         this.position = {
             x: x,
             y: y
         }
         this.width = 25
         this.height = 25
-        this.worldPosition =  {
-            x: (this.position.x * parentShip.shipblock) -this.width / 2  + parentShip.shipblock / 2,
-            y: (this.position.y * parentShip.shipblock) -this.height / 2 + parentShip.shipblock / 2
+        
+        // Calculate world position if ship object provided
+        this.worldPosition = {
+            x: (this.position.x * shipBlock) - this.width / 2 + shipBlock / 2,
+            y: (this.position.y * shipBlock) - this.height / 2 + shipBlock / 2
         }
-        // this rotation is relative to an upwards facing ship
+        
         this.rotation = 0
         this.pair = pair
         this.direction = 0

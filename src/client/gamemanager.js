@@ -2,6 +2,7 @@ import {animate} from './render'
 import { enableMouseDirection, disableMouseDirection, activateMenuListener, disableMenuListener, enableWeaponsListeners, disableWeaponsListeners } from './input'
 import { menustack } from './render'
 import {transportmenu, cargomenu, tacticalmenu} from './menu'
+import io from 'socket.io-client'
 
 export class gamemanager {
     constructor(socket) {
@@ -11,6 +12,24 @@ export class gamemanager {
         this.currentMousePosition = {x: 0, y: 0}
         this.weaponsAngle = 0
         this.weaponsMode = false
+
+        // Listen for redirect events
+        this.socket.on('redirect', (data) => {
+            // Store current connection info
+            const currentPairCode = data.pairCode;
+            
+            // Disconnect from current instance
+            this.socket.disconnect();
+            
+            // Connect to new instance
+            const newSocket = io(`/${data.instanceId}`);
+            
+            // When connected to new instance, try to join with the pair code
+            newSocket.on('connect', () => {
+                this.socket = newSocket;
+                this.addPlayer(this.currentState?.me?.user || 'Player', currentPairCode);
+            });
+        });
     }
     setCurrentState(state) {
         this.currentState = state
@@ -22,13 +41,22 @@ export class gamemanager {
         else {
             enableMouseDirection()
         }
-        const rows = document.querySelectorAll('#leaderboard table tr');
-        const data = this.currentState.leaderboard.leaderboard
-        for (let i = 0; i < data.length; i++) {
-            rows[i + 1].innerHTML = `<td>${data[i].pair}</td><td>${data[i].score}</td>`;
+        
+        // Update leaderboard display
+        const rows = document.querySelectorAll('#leaderboard table tr')
+        const data = this.currentState.leaderboard.leaderboard || []
+        
+        // Clear existing rows
+        for (let i = 1; i < rows.length; i++) {
+            rows[i].innerHTML = '<td>-</td><td>-</td>'
         }
-        for (let i = data.length; i < 5; i++) {
-        rows[i + 1].innerHTML = '<td>-</td><td>-</td>';
+        
+        // Update with new data
+        for (let i = 0; i < data.length && i < 5; i++) {
+            const entry = data[i]
+            if (entry && entry.pair) {
+                rows[i + 1].innerHTML = `<td>${entry.pair}</td><td>${entry.score || 0}</td>`
+            }
         }
     }
     updateMousePosition(x, y) {

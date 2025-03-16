@@ -19,11 +19,32 @@ app.use(express.static(path.resolve('./src/client/serve')))
 
 console.log('server running!')
 
-io.on('connection', socket => {
+io.on('connection', async (socket) => {
     g.addConnection(socket)
     socket.emit('stars', stars)
-    socket.on('addPlayer', (data) => {
-      g.addPlayer(socket, data.u, data.s)
+    
+    socket.on('addPlayer', async (data) => {
+        try {
+            if (data.s) { // If a pair code is provided
+                // Check which instance this pair code belongs to
+                const instanceId = await g.redisManager.getPairInstance(data.s);
+                
+                if (instanceId && instanceId !== g.redisManager.instanceId) {
+                    // This pair code belongs to another instance
+                    socket.emit('redirect', {
+                        instanceId: instanceId,
+                        pairCode: data.s
+                    });
+                    return;
+                }
+            }
+            
+            // If no pair code or pair code belongs to this instance
+            g.addPlayer(data.u, socket)
+        } catch (err) {
+            console.error('Error in addPlayer:', err);
+            socket.emit('error', 'Failed to join game');
+        }
     })
     socket.on('mouseInput', data => {
       g.setShipDirection(g.players[socket.id], data)
