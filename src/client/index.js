@@ -3,7 +3,14 @@ import {io} from 'socket.io-client'
 import { gamemanager } from "./gamemanager"
 import { gamestate } from "./gamestate"
 import { disablePlayerListener, requestUserDetails, activatePlayerListener } from "./input" 
-const socket = io()
+
+// Connect to the Elastic Beanstalk endpoint explicitly
+const socket = io(window.location.origin, {
+    transports: ['websocket', 'polling'],
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    timeout: 10000
+})
 
 const showMulti = () => {
     document.getElementById('play-menu-buttons').classList.add('hidden')

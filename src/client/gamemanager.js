@@ -21,13 +21,24 @@ export class gamemanager {
             // Disconnect from current instance
             this.socket.disconnect();
             
-            // Connect to new instance
-            const newSocket = io(`/${data.instanceId}`);
+            // Connect to new instance with explicit origin
+            const newSocket = io(`${window.location.origin}/${data.instanceId}`, {
+                transports: ['websocket', 'polling'],
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+                timeout: 10000
+            });
             
             // When connected to new instance, try to join with the pair code
             newSocket.on('connect', () => {
+                console.log('Connected to new instance');
                 this.socket = newSocket;
                 this.addPlayer(this.currentState?.me?.user || 'Player', currentPairCode);
+            });
+            
+            // Add error handler
+            newSocket.on('connect_error', (error) => {
+                console.error('Connection error:', error);
             });
         });
     }

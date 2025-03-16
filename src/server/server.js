@@ -5,9 +5,16 @@ import path from 'path'
 import {game} from './game'
 import {star} from '../shared/star'
 const app = express()
-const PORT = process.env.PORT || 5500
+const PORT = process.env.PORT || 8081
 const httpServer = createServer(app)
-const io = new Server(httpServer)
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  transports: ['websocket', 'polling']
+})
 const g = new game()
 
 let stars = []
