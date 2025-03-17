@@ -120,6 +120,50 @@ io.on('connection', socket => {
     socket.on('cancelTimeout', () => {
       g.cancelTimeout(socket.id)
     })
+    
+    // Add legacy handler for old client code
+    socket.on('addPlayer', async (data) => {
+        console.log(`Legacy addPlayer request received from socket ${socket.id}:`, data);
+        try {
+            if (data.s != null) {
+                // Handle pair code
+                console.log(`Processing join request with pair code: ${data.s}`);
+                const isValid = await g.redisManager.isPairCodeRegistered(data.s);
+                if (isValid) {
+                    console.log(`Valid pair code: ${data.s} for socket: ${socket.id}`);
+                    // Valid pair code, proceed with player creation
+                    const result = await g.addPlayer(data.u, socket);
+                    if (result) {
+                        console.log(`Player created successfully with pair code for: ${data.u} (socket: ${socket.id})`);
+                    } else {
+                        console.error(`Failed to create player with pair code for: ${data.u} (socket: ${socket.id})`);
+                        socket.emit('error', 'Failed to create player');
+                    }
+                } else {
+                    console.log(`Invalid pair code: ${data.s} for socket: ${socket.id}`);
+                    socket.emit('pairError');
+                }
+            } else {
+                console.log(`Processing legacy player creation for: ${data.u} (socket: ${socket.id})`);
+                try {
+                    // Create new player
+                    const result = await g.addPlayer(data.u, socket);
+                    if (result) {
+                        console.log(`Legacy player created successfully for: ${data.u} (socket: ${socket.id})`);
+                    } else {
+                        console.error(`Failed to create player for: ${data.u} (socket: ${socket.id})`);
+                        socket.emit('error', 'Failed to create player');
+                    }
+                } catch (error) {
+                    console.error(`Error creating legacy player:`, error);
+                    socket.emit('error', 'Server error creating player');
+                }
+            }
+        } catch (error) {
+            console.error(`Error processing legacy join request:`, error);
+            socket.emit('error', 'Server error processing join request');
+        }
+    })
 })
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`)

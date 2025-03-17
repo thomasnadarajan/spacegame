@@ -40,23 +40,42 @@ socket.on('ready', () => {
     
     // Log before UI changes
     console.log("UI before ready event:", {
-        playMenuHidden: document.getElementById('play-menu').classList.contains('hidden'),
-        gameHidden: document.getElementById('game').classList.contains('hidden'),
-        leaderboardHidden: document.getElementById('leaderboard').classList.contains('hidden')
+        playMenuHidden: document.getElementById('play-menu')?.classList.contains('hidden'),
+        gameHidden: document.getElementById('game')?.classList.contains('hidden'),
+        leaderboardHidden: document.getElementById('leaderboard')?.classList.contains('hidden')
     });
     
-    document.getElementById('play-menu').classList.add("hidden");
-    document.getElementById('game').classList.remove("hidden");
-    document.getElementById('leaderboard').classList.remove("hidden");
-    
-    // Log after UI changes to confirm they took effect
-    console.log("UI after ready event:", {
-        playMenuHidden: document.getElementById('play-menu').classList.contains('hidden'),
-        gameHidden: document.getElementById('game').classList.contains('hidden'),
-        leaderboardHidden: document.getElementById('leaderboard').classList.contains('hidden')
-    });
-    
-    activatePlayerListener();
+    try {
+        // Get elements with error handling
+        const playMenu = document.getElementById('play-menu');
+        const game = document.getElementById('game');
+        const leaderboard = document.getElementById('leaderboard');
+        
+        if (!playMenu || !game || !leaderboard) {
+            console.error('Missing UI elements:', {
+                playMenu: !!playMenu,
+                game: !!game,
+                leaderboard: !!leaderboard
+            });
+        }
+        
+        // Apply UI changes safely
+        if (playMenu) playMenu.classList.add("hidden");
+        if (game) game.classList.remove("hidden");
+        if (leaderboard) leaderboard.classList.remove("hidden");
+        
+        // Log after UI changes to confirm they took effect
+        console.log("UI after ready event:", {
+            playMenuHidden: playMenu?.classList.contains('hidden'),
+            gameHidden: game?.classList.contains('hidden'),
+            leaderboardHidden: leaderboard?.classList.contains('hidden')
+        });
+        
+        // Activate player listener
+        activatePlayerListener();
+    } catch (error) {
+        console.error("Error in ready event handler:", error);
+    }
 })
 
 // Log all incoming socket events for debugging

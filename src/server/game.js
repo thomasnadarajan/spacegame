@@ -154,11 +154,15 @@ export class game {
                 console.log(`Socket connected status: ${socket.connected}`);
                 console.log(`Socket object type: ${typeof socket}`);
                 console.log(`Socket emit function type: ${typeof socket.emit}`);
+                console.log(`Socket ID before emitting 'ready': ${socket.id}`);
+                console.log(`TRACE: About to emit 'ready' event to socket: ${socket.id} - ${Date.now()}`);
                 
                 // Send ready event through socket with extra check
                 try {
                     if (socket && typeof socket.emit === 'function') {
+                        console.log(`TRACE: Inside emit condition for socket: ${socket.id}`);
                         socket.emit('ready');
+                        console.log(`TRACE: After socket.emit('ready') call for: ${socket.id}`);
                         console.log(`'ready' event emitted successfully to socket: ${socket.id}`);
                     } else {
                         console.error(`Socket invalid or missing emit function`);
