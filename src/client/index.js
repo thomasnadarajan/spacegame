@@ -244,3 +244,35 @@ function showGameInterface() {
         console.error("Error showing game interface:", error);
     }
 }
+
+// Add event listeners for username inputs
+document.addEventListener('DOMContentLoaded', () => {
+    // For solo mode
+    const soloUsernameInput = document.getElementById('username-input-solo');
+    const soloPlayButton = document.getElementById('play-button-single');
+    
+    if (soloUsernameInput && soloPlayButton) {
+        soloUsernameInput.addEventListener('input', () => {
+            if (soloUsernameInput.value.trim() !== '') {
+                soloPlayButton.style.display = 'block';
+            } else {
+                soloPlayButton.style.display = 'none';
+            }
+        });
+    }
+    
+    // For multiplayer mode
+    const multiUsernameInput = document.getElementById('username-input');
+    const pairCodeInput = document.getElementById('pair-input');
+    const multiPlayButton = document.getElementById('play-button-multi');
+    
+    if (multiUsernameInput && multiPlayButton) {
+        multiUsernameInput.addEventListener('input', () => {
+            if (multiUsernameInput.value.trim() !== '') {
+                multiPlayButton.style.display = 'block';
+            } else {
+                multiPlayButton.style.display = 'none';
+            }
+        });
+    }
+});
