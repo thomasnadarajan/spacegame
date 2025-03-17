@@ -8,6 +8,16 @@ import path from 'path';
 
 export class RedisManager {
     constructor() {
+        // Add local fallback storage
+        this.localFallback = {
+            players: {},
+            ships: {},
+            cargo: [],
+            leaderboard: { leaderboard: [] },
+            pair_instances: {}
+        };
+        this.usingFallback = false;
+        
         try {
             // Load environment variables from .env file
             this.loadEnvFromFile();
@@ -28,6 +38,10 @@ export class RedisManager {
                 commandTimeout: 30000,
                 retryStrategy: (times) => {
                     console.log(`Redis retry attempt ${times}`);
+                    if (times > 5) {
+                        this.enableFallbackMode();
+                        return false; // Stop retrying after 5 attempts
+                    }
                     return Math.min(times * 500, 15000);
                 },
                 maxRetriesPerRequest: 10,
@@ -58,14 +72,17 @@ export class RedisManager {
             // Handle connection events
             this.redis.on('error', (err) => {
                 console.error('Redis connection error:', err);
+                this.enableFallbackMode();
             });
             
             this.redis.on('connect', () => {
                 console.log('Successfully connected to Redis');
+                this.usingFallback = false;
             });
             
             this.redis.on('ready', () => {
                 console.log('Redis client is ready');
+                this.usingFallback = false;
             });
             
             // Generate a unique instance ID
@@ -73,6 +90,14 @@ export class RedisManager {
             console.log('Redis Manager initialized with instance ID:', this.instanceId);
         } catch (error) {
             console.error('Error initializing Redis Manager:', error);
+            this.enableFallbackMode();
+        }
+    }
+
+    enableFallbackMode() {
+        if (!this.usingFallback) {
+            console.log('Enabling Redis fallback mode - using in-memory storage');
+            this.usingFallback = true;
         }
     }
 
@@ -196,6 +221,12 @@ export class RedisManager {
                 keys: playerData.keys || {}
             };
             
+            if (this.usingFallback) {
+                console.log(`[FALLBACK] Adding player ${playerId} to local storage`);
+                this.localFallback.players[playerId] = cleanPlayerData;
+                return true;
+            }
+            
             // Store the clean data in Redis
             await this.redis.hset('players', playerId, JSON.stringify(cleanPlayerData));
             
@@ -205,9 +236,23 @@ export class RedisManager {
                 playerId,
                 playerData: cleanPlayerData
             }));
+            
+            return true;
         } catch (err) {
             console.error('Error adding player:', err);
-            throw err;
+            // Fallback to local storage
+            const cleanPlayerData = {
+                username: playerData.username,
+                position: playerData.position,
+                worldPosition: playerData.worldPosition,
+                health: playerData.health,
+                currentShip: playerData.currentShip,
+                playerView: playerData.playerView,
+                pair: playerData.pair,
+                keys: playerData.keys || {}
+            };
+            this.localFallback.players[playerId] = cleanPlayerData;
+            return true;
         }
     }
 
@@ -314,9 +359,19 @@ export class RedisManager {
     // Add new methods for pair code management
     async registerPairCode(pairCode) {
         try {
+            if (this.usingFallback) {
+                console.log(`[FALLBACK] Registering pair code ${pairCode} locally`);
+                this.localFallback.pair_instances[pairCode] = this.instanceId;
+                return true;
+            }
+            
             await this.redis.hset('pair_instances', pairCode, this.instanceId);
+            return true;
         } catch (err) {
             console.error('Error registering pair code:', err);
+            // Fallback to local storage
+            this.localFallback.pair_instances[pairCode] = this.instanceId;
+            return true;
         }
     }
 
@@ -339,12 +394,22 @@ export class RedisManager {
 
     async isPairCodeRegistered(pairCode) {
         try {
+            if (this.usingFallback) {
+                console.log(`[FALLBACK] Checking if pair code ${pairCode} exists: ${!!this.localFallback.pair_instances[pairCode]}`);
+                return !!this.localFallback.pair_instances[pairCode];
+            }
+            
             // Check if the pair code exists in Redis
             const exists = await this.redis.hexists('pair_instances', pairCode);
             console.log(`Checking if pair code ${pairCode} exists: ${exists}`);
             return exists === 1;
         } catch (err) {
             console.error('Error checking if pair code exists:', err);
+            // Fall back to local storage in case of Redis errors
+            if (this.localFallback.pair_instances[pairCode]) {
+                console.log(`[FALLBACK] Using local pair code data for ${pairCode}`);
+                return true;
+            }
             return false;
         }
     }

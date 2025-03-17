@@ -10,16 +10,34 @@ const socket = io(window.location.origin, {
     reconnectionAttempts: 10,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
-    timeout: 20000
+    timeout: 30000,
+    forceNew: true,
+    upgrade: true,
+    autoConnect: true,
+    rejectUnauthorized: false
 })
 
 // Add connection status logging
 socket.on('connect_error', (err) => {
     console.error('Connection error:', err);
+    // Display the error in the UI
+    document.getElementById('error').classList.remove("hidden");
+    document.getElementById('error').innerHTML = "Connection error: " + (err.message || "Unable to connect to server");
+    
+    // Try to reconnect automatically
+    setTimeout(() => {
+        console.log("Attempting to reconnect...");
+        socket.connect();
+    }, 5000);
 })
 
 socket.on('disconnect', (reason) => {
     console.log('Disconnected:', reason);
+    // Display the disconnect reason in the UI if it's an error
+    if (reason !== 'io client disconnect' && reason !== 'io server disconnect') {
+        document.getElementById('error').classList.remove("hidden");
+        document.getElementById('error').innerHTML = "Disconnected: " + reason;
+    }
 })
 
 // Socket connection handler

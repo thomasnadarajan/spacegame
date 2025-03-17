@@ -4,6 +4,8 @@ import {createServer} from 'http'
 import path from 'path'
 import {game} from './game'
 import {star} from '../shared/star'
+import cors from 'cors'
+
 const app = express()
 const PORT = process.env.PORT || 8081
 
@@ -12,6 +14,15 @@ console.log(`Configured to use PORT: ${PORT}`)
 console.log(`Environment PORT: ${process.env.PORT}`)
 console.log(`NODE_ENV: ${process.env.NODE_ENV}`)
 
+// Configure Express with CORS and other middleware
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST'],
+  credentials: true
+}))
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+
 const httpServer = createServer(app)
 const io = new Server(httpServer, {
   cors: {
@@ -19,9 +30,13 @@ const io = new Server(httpServer, {
     methods: ["GET", "POST"],
     credentials: true
   },
+  allowEIO3: true,
   pingTimeout: 60000,
   pingInterval: 25000,
-  transports: ['websocket', 'polling']
+  transports: ['polling', 'websocket'],
+  connectTimeout: 30000,
+  upgradeTimeout: 30000,
+  maxHttpBufferSize: 1e8
 })
 const g = new game()
 
