@@ -96,7 +96,7 @@ export class gamemanager {
         this.socket.emit('fire', {angle: this.weaponsAngle, ship: this.currentState.me.currentShip})
     }
     handlePlayerFire() {
-        this.socket.emit('playerFire')
+        this.socket.emit('pfire')
     }
     updateMouseClick() {
         const currentMenu = menustack[menustack.length - 1]
@@ -124,12 +124,12 @@ export class gamemanager {
         cancelAnimationFrame(this.animationFrameRequest)
     }
     handleMouseInput(input) {
-        this.socket.emit('mouseInput', input)
+        this.socket.emit('update', input)
     }
 
     handlePowerUpdate(comp, level, ship) {
         const data = {system: comp, level: level, ship: ship}
-        this.socket.emit('powerUpdate', data)
+        this.socket.emit('power', data)
     }
     handleKeyInput(input) {
         if (input === 'use') {
@@ -157,18 +157,18 @@ export class gamemanager {
             }
             
             else {
-                this.socket.emit('keyInput', input)
+                this.socket.emit('direction', input)
             }
         }
         else {
-            this.socket.emit('keyInput', input)
+            this.socket.emit('direction', input)
         }
     }
     handleStopDirection(input) {
         this.socket.emit('stopDirection', input)
     }
     handlePlayerWeaponsDirection(data) {
-        this.socket.emit('playerWeaponsDirection', data)
+        this.socket.emit('playerDirection', data)
     }
     handleTransportRequest() {
         const currentMenu = menustack[menustack.length - 1]
