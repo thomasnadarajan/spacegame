@@ -39,71 +39,80 @@ app.get('/health', (req, res) => {
 
 console.log('server running!')
 
-io.on('connection', async (socket) => {
+io.on('connection', socket => {
+    console.log(`New socket connection: ${socket.id}`);
     g.addConnection(socket)
     socket.emit('stars', stars)
     
-    socket.on('addPlayer', async (data) => {
+    socket.on('update', (data) => {
+        if (data === null) {
+            console.log(`Received null update from socket: ${socket.id}`);
+        } else {
+            g.setShipDirection(g.players[socket.id], data)
+        }
+    })
+    socket.on('fire', (data) => {
+        g.handleFire(data, g.players[socket.id].currentShip)
+    })
+    socket.on('pfire', () => {
+        g.handlePlayerFire(socket.id)
+    })
+    socket.on('power', data => {
+        g.handlePowerUpdate(data.system, data.level, g.players[socket.id].currentShip)
+    })
+    socket.on('disconnect', () => {
+        console.log(`Socket disconnected: ${socket.id}`);
+        g.disconnect(socket)
+    })
+    socket.on('direction', (key) => {
+        g.handleDirectionInput(socket.id, key)
+    })
+    socket.on('stopDirection', (key) => {
+        g.stopDirection(socket.id, key)
+    })
+    socket.on('playerDirection', (data) => {
+        g.handlePlayerDirection(socket.id, data)
+    })
+    socket.on('join', async (data) => {
+        console.log(`Join request received from socket ${socket.id}:`, data);
         try {
-            if (data.s) { // If a pair code is provided
-                // Check which instance this pair code belongs to
-                const instanceId = await g.redisManager.getPairInstance(data.s);
-                
-                if (instanceId && instanceId !== g.redisManager.instanceId) {
-                    // This pair code belongs to another instance
-                    socket.emit('redirect', {
-                        instanceId: instanceId,
-                        pairCode: data.s
-                    });
-                    return;
+            if (data.code != null && data.name != null) {
+                console.log(`Processing join request with pair code: ${data.code}`);
+                const isValid = await g.redisManager.isPairCodeRegistered(data.code);
+                if (isValid) {
+                    console.log(`Valid pair code: ${data.code} for socket: ${socket.id}`);
+                    // Valid pair code, can join
+                    // Process logic here...
+                } else {
+                    console.log(`Invalid pair code: ${data.code} for socket: ${socket.id}`);
+                    socket.emit('pairError');
+                }
+            } else if (data.name != null) {
+                console.log(`Processing player creation for: ${data.name} (socket: ${socket.id})`);
+                try {
+                    // Create new player
+                    const result = await g.addPlayer(data.name, socket);
+                    if (result) {
+                        console.log(`Player created successfully for: ${data.name} (socket: ${socket.id})`);
+                    } else {
+                        console.error(`Failed to create player for: ${data.name} (socket: ${socket.id})`);
+                        socket.emit('error', 'Failed to create player');
+                    }
+                } catch (error) {
+                    console.error(`Error creating player:`, error);
+                    socket.emit('error', 'Server error creating player');
                 }
             }
-            
-            // If no pair code or pair code belongs to this instance
-            g.addPlayer(data.u, socket)
-        } catch (err) {
-            console.error('Error in addPlayer:', err);
-            socket.emit('error', 'Failed to join game');
+        } catch (error) {
+            console.error(`Error processing join request:`, error);
+            socket.emit('error', 'Server error processing join request');
         }
     })
-    socket.on('mouseInput', data => {
-      g.setShipDirection(g.players[socket.id], data)
-    })
-    socket.on('keyInput', data => {
-      g.handleDirectionInput(socket.id, data)
-    })
-    socket.on('transport', data => {
-      try{
-        g.movePlayer(data.player, data.ship)
-      }
-      catch (err) {
-        if (err.name === 'TypeError') {
-          console.log(err)
-        }
-      }
-    })
-    socket.on('powerUpdate', data => {
-      g.handlePowerUpdate(data.system, data.level, data.ship)
-    })
-    socket.on('fire', data => {
-      g.handleFire(data.angle, data.ship)
-    })
-    socket.on('playerWeaponsDirection', data => {
-      g.handlePlayerDirection(socket.id, data)
-    })
-    socket.on('playerFire', () => {g.handlePlayerFire(socket.id)})
     socket.on('startCargoTransport', data => {
       g.handleTransportStart(data)
     })
     socket.on('cancelCargoTransport', data => {
       g.cancelTransportRequest(data)
-    })
-    socket.on('disconnect', () => {
-      g.disconnect(socket)
-      socket.disconnect()
-    })
-    socket.on('stopDirection', data => {
-      g.stopDirection(socket.id, data)
     })
     socket.on('timeout', () => {
       g.addTimeout(socket.id)

@@ -22,21 +22,62 @@ socket.on('disconnect', (reason) => {
     console.log('Disconnected:', reason);
 })
 
-// Add debugging for all socket events
+// Enhanced debugging for socket connection
+socket.on('connect', () => {
+    console.log("Client connected successfully with ID:", socket.id);
+    
+    // For testing purposes, log the current state of UI elements
+    console.log("UI state at connection:", {
+        playMenuHidden: document.getElementById('play-menu').classList.contains('hidden'),
+        gameHidden: document.getElementById('game').classList.contains('hidden'),
+        leaderboardHidden: document.getElementById('leaderboard').classList.contains('hidden')
+    });
+})
+
+// Add debugging for specific events
+socket.on('ready', () => {
+    console.log("Received 'ready' event - should show play button");
+    
+    // Log before UI changes
+    console.log("UI before ready event:", {
+        playMenuHidden: document.getElementById('play-menu').classList.contains('hidden'),
+        gameHidden: document.getElementById('game').classList.contains('hidden'),
+        leaderboardHidden: document.getElementById('leaderboard').classList.contains('hidden')
+    });
+    
+    document.getElementById('play-menu').classList.add("hidden");
+    document.getElementById('game').classList.remove("hidden");
+    document.getElementById('leaderboard').classList.remove("hidden");
+    
+    // Log after UI changes to confirm they took effect
+    console.log("UI after ready event:", {
+        playMenuHidden: document.getElementById('play-menu').classList.contains('hidden'),
+        gameHidden: document.getElementById('game').classList.contains('hidden'),
+        leaderboardHidden: document.getElementById('leaderboard').classList.contains('hidden')
+    });
+    
+    activatePlayerListener();
+})
+
+// Log all incoming socket events for debugging
 const originalOn = socket.on;
 socket.on = function(event, callback) {
-    const wrappedCallback = function(...args) {
-        console.log(`[DEBUG] Received event '${event}'`, args);
-        return callback.apply(this, args);
-    };
-    return originalOn.call(this, event, wrappedCallback);
+    if (event !== 'update') { // Skip logging update events as they're frequent
+        const wrappedCallback = function(...args) {
+            console.log(`Socket event received: ${event}`, args.length > 0 ? args : '');
+            return callback.apply(this, args);
+        };
+        return originalOn.call(this, event, wrappedCallback);
+    } else {
+        return originalOn.call(this, event, callback);
+    }
 };
 
-const originalEmit = socket.emit;
-socket.emit = function(event, ...args) {
-    console.log(`[DEBUG] Emitting event '${event}'`, args);
-    return originalEmit.apply(this, event, args);
-};
+socket.on('error', (error) => {
+    console.error("Received error from server:", error);
+    document.getElementById('error').classList.remove("hidden");
+    document.getElementById('error').innerHTML = error || "An unknown error occurred";
+});
 
 const showMulti = () => {
     document.getElementById('play-menu-buttons').classList.add('hidden')
@@ -64,9 +105,6 @@ document.getElementById("back-button-solo").addEventListener("click", () => {
   document.getElementById('play-menu-buttons').classList.remove('hidden')
   document.getElementById('play-menu-buttons').classList.add('show')
 })
-socket.on('connect', () => {
-    console.log("client connected")
-})
 export const game = new gamemanager(socket)
 export var stars = []
 const restore = () => {
@@ -86,12 +124,6 @@ socket.on('update', (data) => {
 })
 socket.on('dead',() => {
     restore()
-})
-socket.on('ready', () => {
-    document.getElementById('play-menu').classList.add("hidden")
-    document.getElementById('game').classList.remove("hidden")
-    document.getElementById('leaderboard').classList.remove("hidden")
-    activatePlayerListener()
 })
 socket.on('pairError', () => {
     document.getElementById('error').classList.remove("hidden")

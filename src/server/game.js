@@ -145,13 +145,26 @@ export class game {
                 // Save to Redis
                 await this.redisManager.addPlayer(socket.id, playerData)
 
-                console.log(`Emitting 'ready' event to socket: ${socket.id}`);
-                // Send ready event through socket
-                if (socket && typeof socket.emit === 'function') {
-                    socket.emit('ready')
-                    console.log(`'ready' event emitted successfully`);
-                } else {
-                    console.error(`Socket invalid or missing emit function`);
+                console.log(`===== PLAYER CREATION SUCCESS =====`);
+                console.log(`Player created: ${user} with socket ID: ${socket.id}`);
+                console.log(`Player data:`, JSON.stringify(playerData, null, 2));
+                console.log(`Ready to emit 'ready' event to socket: ${socket.id}`);
+                
+                // Check socket state before emitting
+                console.log(`Socket connected status: ${socket.connected}`);
+                console.log(`Socket object type: ${typeof socket}`);
+                console.log(`Socket emit function type: ${typeof socket.emit}`);
+                
+                // Send ready event through socket with extra check
+                try {
+                    if (socket && typeof socket.emit === 'function') {
+                        socket.emit('ready');
+                        console.log(`'ready' event emitted successfully to socket: ${socket.id}`);
+                    } else {
+                        console.error(`Socket invalid or missing emit function`);
+                    }
+                } catch (emitError) {
+                    console.error(`Error emitting 'ready' event:`, emitError);
                 }
                 
                 return {
