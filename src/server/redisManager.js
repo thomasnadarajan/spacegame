@@ -25,7 +25,7 @@ export class RedisManager {
                 host: process.env.REDIS_ENDPOINT,
                 port: parseInt(process.env.REDIS_PORT || '6379'),
                 connectTimeout: 30000,
-                commandTimeout: 10000,
+                commandTimeout: 30000,
                 retryStrategy: (times) => {
                     console.log(`Redis retry attempt ${times}`);
                     return Math.min(times * 500, 15000);
@@ -38,7 +38,15 @@ export class RedisManager {
                         return true;
                     }
                     return false;
-                }
+                },
+                socket: {
+                    keepAlive: true,
+                    keepAliveDelay: 60000,
+                    noDelay: true,
+                    timeout: 30000
+                },
+                retryUnfulfilled: true,
+                maxLoadingRetryTime: 10000
             };
             
             console.log('Connecting to Redis with config:', JSON.stringify(redisConfig, null, 2));
@@ -249,15 +257,32 @@ export class RedisManager {
                 })) : []
             };
             
-            await this.redis.set('leaderboard', JSON.stringify(cleanLeaderboard));
+            // Set timeout for this operation to handle it gracefully
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Leaderboard update timeout')), 25000);
+            });
             
-            // Publish leaderboard update
-            await this.redis.publish('game:state:update', JSON.stringify({
-                type: 'leaderboard:update',
-                data: cleanLeaderboard
-            }));
+            // Race the Redis operation against the timeout
+            await Promise.race([
+                this.redis.set('leaderboard', JSON.stringify(cleanLeaderboard)),
+                timeoutPromise
+            ]);
+            
+            // Only publish the update if we get this far (no timeout occurred)
+            try {
+                await this.redis.publish('game:state:update', JSON.stringify({
+                    type: 'leaderboard:update',
+                    data: cleanLeaderboard
+                }));
+                console.log('Leaderboard updated successfully');
+            } catch (pubErr) {
+                // Just log the publish error but consider the main operation successful
+                console.error('Error publishing leaderboard update:', pubErr);
+            }
         } catch (err) {
+            // Log the error but don't crash the application
             console.error('Error updating leaderboard:', err);
+            // We can add fallback behavior here if needed
         }
     }
 
