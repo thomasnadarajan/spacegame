@@ -24,12 +24,21 @@ export class RedisManager {
             const redisConfig = {
                 host: process.env.REDIS_ENDPOINT,
                 port: parseInt(process.env.REDIS_PORT || '6379'),
-                connectTimeout: 10000,
+                connectTimeout: 30000,
+                commandTimeout: 10000,
                 retryStrategy: (times) => {
                     console.log(`Redis retry attempt ${times}`);
-                    return Math.min(times * 100, 3000);
+                    return Math.min(times * 500, 15000);
                 },
-                maxRetriesPerRequest: 5
+                maxRetriesPerRequest: 10,
+                enableOfflineQueue: true,
+                reconnectOnError: (err) => {
+                    const targetError = 'READONLY';
+                    if (err.message.includes(targetError)) {
+                        return true;
+                    }
+                    return false;
+                }
             };
             
             console.log('Connecting to Redis with config:', JSON.stringify(redisConfig, null, 2));
