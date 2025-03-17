@@ -4,8 +4,17 @@ import { gamemanager } from "./gamemanager"
 import { gamestate } from "./gamestate"
 import { disablePlayerListener, requestUserDetails, activatePlayerListener } from "./input" 
 
-// Connect to the Elastic Beanstalk endpoint explicitly
-const socket = io(window.location.origin, {
+// Get server URL from configuration or environment
+const SERVER_URL = window.GAME_SERVER_URL || window.location.origin;
+console.log("Connecting to game server at:", SERVER_URL);
+
+// Enable debug mode if configured
+if (window.DEBUG) {
+    localStorage.debug = '*';
+}
+
+// Connect to the game server using configuration options
+const socket = io(SERVER_URL, window.SOCKET_OPTIONS || {
     transports: ['polling', 'websocket'],  // Try polling first, fall back to websocket
     reconnectionAttempts: 10,
     reconnectionDelay: 1000,
