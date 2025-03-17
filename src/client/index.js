@@ -36,10 +36,13 @@ socket.on('connect', () => {
     
     // For testing purposes, log the current state of UI elements
     console.log("UI state at connection:", {
-        playMenuHidden: document.getElementById('play-menu').classList.contains('hidden'),
-        gameHidden: document.getElementById('game').classList.contains('hidden'),
-        leaderboardHidden: document.getElementById('leaderboard').classList.contains('hidden')
+        playMenuHidden: document.getElementById('play-menu')?.classList.contains('hidden'),
+        gameHidden: document.getElementById('game')?.classList.contains('hidden'),
+        leaderboardHidden: document.getElementById('leaderboard')?.classList.contains('hidden')
     });
+    
+    // Create emergency button
+    setTimeout(createEmergencyButton, 1000);
 })
 
 // Add debugging for specific events
@@ -174,18 +177,39 @@ document.addEventListener('socket:ready', () => {
     showGameInterface();
 });
 
-// Emergency button handler
-document.addEventListener('DOMContentLoaded', () => {
-    const manualButton = document.getElementById('manual-ready');
-    if (manualButton) {
-        manualButton.addEventListener('click', () => {
-            console.log("Manual show game button clicked");
-            showGameInterface();
-        });
-    } else {
-        console.error("Manual ready button not found!");
-    }
-});
+// Create emergency button dynamically
+const createEmergencyButton = () => {
+    // Check if button already exists
+    if (document.getElementById('manual-ready')) return;
+    
+    // Create container
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.bottom = '10px';
+    container.style.right = '10px';
+    container.style.zIndex = '1000';
+    container.style.background = 'rgba(0,0,0,0.7)';
+    container.style.padding = '10px';
+    container.style.borderRadius = '5px';
+    
+    // Create button
+    const button = document.createElement('button');
+    button.id = 'manual-ready';
+    button.innerText = 'Show Game';
+    button.style.cursor = 'pointer';
+    button.style.padding = '5px 10px';
+    
+    // Add click event
+    button.addEventListener('click', () => {
+        console.log("Manual show game button clicked");
+        showGameInterface();
+    });
+    
+    // Append to DOM
+    container.appendChild(button);
+    document.body.appendChild(container);
+    console.log("Emergency button created and added to DOM");
+};
 
 // Centralized function to show the game interface
 function showGameInterface() {
