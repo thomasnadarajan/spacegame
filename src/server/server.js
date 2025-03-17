@@ -44,6 +44,10 @@ io.on('connection', socket => {
     g.addConnection(socket)
     socket.emit('stars', stars)
     
+    // Add test event to verify Socket.io is working
+    console.log(`Emitting test event to socket: ${socket.id}`);
+    socket.emit('test_event', { message: 'This is a test event' });
+    
     socket.on('update', (data) => {
         if (data === null) {
             console.log(`Received null update from socket: ${socket.id}`);

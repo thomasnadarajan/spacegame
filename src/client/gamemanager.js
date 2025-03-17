@@ -197,6 +197,29 @@ export class gamemanager {
         if (pair === null) {
             console.log(`CLIENT: Emitting 'addPlayer' with {u: ${user}, s: null}`);
             this.socket.emit('addPlayer', {u: user, s: null})
+            
+            // Add client-side fallback for ready event
+            setTimeout(() => {
+                console.log("CLIENT: Adding fallback ready event dispatcher");
+                // Directly dispatch a custom event to trigger the ready handler
+                const readyEvent = new CustomEvent('socket:ready');
+                document.dispatchEvent(readyEvent);
+                
+                // Try to manually show the game UI
+                try {
+                    const playMenu = document.getElementById('play-menu');
+                    const game = document.getElementById('game');
+                    const leaderboard = document.getElementById('leaderboard');
+                    
+                    if (playMenu) playMenu.classList.add("hidden");
+                    if (game) game.classList.remove("hidden");
+                    if (leaderboard) leaderboard.classList.remove("hidden");
+                    
+                    console.log("CLIENT: Manual UI update completed");
+                } catch (error) {
+                    console.error("CLIENT: Error in manual UI update", error);
+                }
+            }, 3000); // Wait 3 seconds after player creation
         }
         else {
             console.log(`CLIENT: Emitting 'addPlayer' with {u: ${user}, s: ${pair}}`);

@@ -22,6 +22,14 @@ socket.on('disconnect', (reason) => {
     console.log('Disconnected:', reason);
 })
 
+// Test event to verify Socket.io is working
+socket.on('test_event', (data) => {
+    console.log('TEST EVENT RECEIVED:', data);
+    // If we receive this, Socket.io is working
+    document.getElementById('error').classList.remove("hidden");
+    document.getElementById('error').innerHTML = "Socket.io is working! Test event received.";
+})
+
 // Enhanced debugging for socket connection
 socket.on('connect', () => {
     console.log("Client connected successfully with ID:", socket.id);
@@ -174,5 +182,42 @@ addEventListener('visibilitychange', () => {
 socket.onAny((event, ...args) => {
     if (event !== 'update') {
         console.log(`Event received: ${event}`, args.length > 0 ? args : '');
+    }
+});
+
+// Add fallback ready event listener from DOM
+document.addEventListener('socket:ready', () => {
+    console.log("Received custom 'socket:ready' event from DOM");
+    
+    // Use the same logic as the socket 'ready' handler
+    try {
+        const playMenu = document.getElementById('play-menu');
+        const game = document.getElementById('game');
+        const leaderboard = document.getElementById('leaderboard');
+        
+        if (!playMenu || !game || !leaderboard) {
+            console.error('Missing UI elements:', {
+                playMenu: !!playMenu,
+                game: !!game,
+                leaderboard: !!leaderboard
+            });
+        }
+        
+        // Apply UI changes safely
+        if (playMenu) playMenu.classList.add("hidden");
+        if (game) game.classList.remove("hidden");
+        if (leaderboard) leaderboard.classList.remove("hidden");
+        
+        // Log after UI changes to confirm they took effect
+        console.log("UI after fallback ready event:", {
+            playMenuHidden: playMenu?.classList.contains('hidden'),
+            gameHidden: game?.classList.contains('hidden'),
+            leaderboardHidden: leaderboard?.classList.contains('hidden')
+        });
+        
+        // Activate player listener
+        activatePlayerListener();
+    } catch (error) {
+        console.error("Error in fallback ready event handler:", error);
     }
 });

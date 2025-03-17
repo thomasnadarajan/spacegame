@@ -161,8 +161,16 @@ export class game {
                 try {
                     if (socket && typeof socket.emit === 'function') {
                         console.log(`TRACE: Inside emit condition for socket: ${socket.id}`);
+                        
+                        // Emit directly to the socket
                         socket.emit('ready');
                         console.log(`TRACE: After socket.emit('ready') call for: ${socket.id}`);
+                        
+                        // Also broadcast to the room with this socket ID to catch any reconnections
+                        socket.join(socket.id);
+                        socket.to(socket.id).emit('ready');
+                        console.log(`TRACE: Broadcast 'ready' event to room: ${socket.id}`);
+                        
                         console.log(`'ready' event emitted successfully to socket: ${socket.id}`);
                     } else {
                         console.error(`Socket invalid or missing emit function`);
