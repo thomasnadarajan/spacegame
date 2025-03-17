@@ -81,6 +81,7 @@ export class game {
         return false;
     }
     async addPlayer(user, socket) {
+        console.log(`Attempting to add player: ${user} with socket ID: ${socket.id}`);
         try {
             // Generate random ship position and ID
             const x = 5000 * (0.25 + Math.random() * 0.5)
@@ -88,13 +89,17 @@ export class game {
             const ship_id = Math.floor(1000 + Math.random() * 9000)
             const temp = new ship(x, y, ship_id)
             
+            console.log(`Created ship with ID: ${ship_id} at position x:${x}, y:${y}`);
+            
             // Check if ship position is valid
             if (!this.checkCollisions(temp)) {
+                console.log(`No collision detected, proceeding with player creation`);
                 // Create ship first
                 this.ships[ship_id] = temp
                 
                 // Generate a unique pair code if not provided
                 const pair_code = Math.floor(1000 + Math.random() * 9000).toString()
+                console.log(`Generated pair code: ${pair_code}`);
                 
                 // Create player with ship ID and initial position
                 const newPlayer = new player(user, ship_id, 1, 2, pair_code)
@@ -117,6 +122,7 @@ export class game {
                     players: [socket.id]
                 }
                 
+                console.log(`Registering pair code: ${pair_code} with Redis`);
                 // Register the pair code with this instance
                 await this.redisManager.registerPairCode(pair_code)
                 
@@ -135,21 +141,28 @@ export class game {
                     keys: {}
                 }
                 
+                console.log(`Saving player data to Redis`);
                 // Save to Redis
                 await this.redisManager.addPlayer(socket.id, playerData)
 
+                console.log(`Emitting 'ready' event to socket: ${socket.id}`);
                 // Send ready event through socket
                 if (socket && typeof socket.emit === 'function') {
                     socket.emit('ready')
+                    console.log(`'ready' event emitted successfully`);
+                } else {
+                    console.error(`Socket invalid or missing emit function`);
                 }
                 
                 return {
                     player: newPlayer,
                     ship: temp
                 }
+            } else {
+                console.error(`Ship collision detected, player creation failed`);
             }
         } catch (e) {
-            console.error('Failed to add player:', e)
+            console.error('Failed to add player:', e);
             throw e; // Re-throw to handle in the calling code
         }
     }

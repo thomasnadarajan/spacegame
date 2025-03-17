@@ -22,6 +22,22 @@ socket.on('disconnect', (reason) => {
     console.log('Disconnected:', reason);
 })
 
+// Add debugging for all socket events
+const originalOn = socket.on;
+socket.on = function(event, callback) {
+    const wrappedCallback = function(...args) {
+        console.log(`[DEBUG] Received event '${event}'`, args);
+        return callback.apply(this, args);
+    };
+    return originalOn.call(this, event, wrappedCallback);
+};
+
+const originalEmit = socket.emit;
+socket.emit = function(event, ...args) {
+    console.log(`[DEBUG] Emitting event '${event}'`, ...args);
+    return originalEmit.apply(this, event, ...args);
+};
+
 const showMulti = () => {
     document.getElementById('play-menu-buttons').classList.add('hidden')
     document.getElementById('multiplayer-buttons').classList.remove('hidden')
