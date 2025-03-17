@@ -39,6 +39,13 @@ socket.on('error', (error) => {
     document.getElementById('error').innerHTML = error || "An unknown error occurred";
 });
 
+// Add handler for game_error events
+socket.on('game_error', (error) => {
+    console.error("Received game error from server:", error);
+    document.getElementById('error').classList.remove("hidden");
+    document.getElementById('error').innerHTML = error || "An unknown error occurred";
+});
+
 const showMulti = () => {
     document.getElementById('play-menu-buttons').classList.add('hidden')
     document.getElementById('multiplayer-buttons').classList.remove('hidden')

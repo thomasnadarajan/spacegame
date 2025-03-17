@@ -45,33 +45,73 @@ io.on('connection', socket => {
     socket.emit('stars', stars)
     
     socket.on('update', (data) => {
-        if (data === null) {
-            console.log(`Received null update from socket: ${socket.id}`);
-        } else {
-            g.setShipDirection(g.players[socket.id], data)
+        try {
+            if (data === null) {
+                console.log(`Received null update from socket: ${socket.id}`);
+            } else if (g.players[socket.id]) {
+                g.setShipDirection(g.players[socket.id], data)
+            }
+        } catch (error) {
+            console.error(`Error handling update event:`, error);
         }
     })
     socket.on('fire', (data) => {
-        g.handleFire(data, g.players[socket.id].currentShip)
+        try {
+            if (g.players[socket.id]) {
+                g.handleFire(data, g.players[socket.id].currentShip)
+            }
+        } catch (error) {
+            console.error(`Error handling fire event:`, error);
+        }
     })
     socket.on('pfire', () => {
-        g.handlePlayerFire(socket.id)
+        try {
+            if (g.players[socket.id]) {
+                g.handlePlayerFire(socket.id)
+            }
+        } catch (error) {
+            console.error(`Error handling pfire event:`, error);
+        }
     })
     socket.on('power', data => {
-        g.handlePowerUpdate(data.system, data.level, g.players[socket.id].currentShip)
+        try {
+            if (g.players[socket.id]) {
+                g.handlePowerUpdate(data.system, data.level, g.players[socket.id].currentShip)
+            }
+        } catch (error) {
+            console.error(`Error handling power event:`, error);
+        }
     })
     socket.on('disconnect', () => {
         console.log(`Socket disconnected: ${socket.id}`);
         g.disconnect(socket)
     })
     socket.on('direction', (key) => {
-        g.handleDirectionInput(socket.id, key)
+        try {
+            if (g.players[socket.id]) {
+                g.handleDirectionInput(socket.id, key)
+            }
+        } catch (error) {
+            console.error(`Error handling direction event:`, error);
+        }
     })
     socket.on('stopDirection', (key) => {
-        g.stopDirection(socket.id, key)
+        try {
+            if (g.players[socket.id]) {
+                g.stopDirection(socket.id, key)
+            }
+        } catch (error) {
+            console.error(`Error handling stopDirection event:`, error);
+        }
     })
     socket.on('playerDirection', (data) => {
-        g.handlePlayerDirection(socket.id, data)
+        try {
+            if (g.players[socket.id]) {
+                g.handlePlayerDirection(socket.id, data)
+            }
+        } catch (error) {
+            console.error(`Error handling playerDirection event:`, error);
+        }
     })
     socket.on('join', async (data) => {
         console.log(`Join request received from socket ${socket.id}:`, data);
@@ -89,11 +129,11 @@ io.on('connection', socket => {
                             console.log(`Player joined with pair code ${data.code}: ${data.name} (socket: ${socket.id})`);
                         } else {
                             console.error(`Failed to join player with pair code for: ${data.name} (socket: ${socket.id})`);
-                            socket.emit('error', 'Failed to join with pair code');
+                            socket.emit('game_error', 'Failed to join with pair code');
                         }
                     } catch (error) {
                         console.error(`Error joining with pair code:`, error);
-                        socket.emit('error', 'Server error joining with pair code');
+                        socket.emit('game_error', 'Server error joining with pair code');
                     }
                 } else {
                     console.log(`Invalid pair code: ${data.code} for socket: ${socket.id}`);
@@ -108,29 +148,49 @@ io.on('connection', socket => {
                         console.log(`Player created successfully for: ${data.name} (socket: ${socket.id})`);
                     } else {
                         console.error(`Failed to create player for: ${data.name} (socket: ${socket.id})`);
-                        socket.emit('error', 'Failed to create player');
+                        socket.emit('game_error', 'Failed to create player');
                     }
                 } catch (error) {
                     console.error(`Error creating player:`, error);
-                    socket.emit('error', 'Server error creating player');
+                    socket.emit('game_error', 'Server error creating player');
                 }
             }
         } catch (error) {
             console.error(`Error processing join request:`, error);
-            socket.emit('error', 'Server error processing join request');
+            socket.emit('game_error', 'Server error processing join request');
         }
     })
     socket.on('startCargoTransport', data => {
-      g.handleTransportStart(data)
+      try {
+        if (data && g.players[socket.id]) {
+          g.handleTransportStart(data)
+        }
+      } catch (error) {
+        console.error(`Error handling startCargoTransport event:`, error);
+      }
     })
     socket.on('cancelCargoTransport', data => {
-      g.cancelTransportRequest(data)
+      try {
+        if (data && g.players[socket.id]) {
+          g.cancelTransportRequest(data)
+        }
+      } catch (error) {
+        console.error(`Error handling cancelCargoTransport event:`, error);
+      }
     })
     socket.on('timeout', () => {
-      g.addTimeout(socket.id)
+      try {
+        g.addTimeout(socket.id)
+      } catch (error) {
+        console.error(`Error handling timeout event:`, error);
+      }
     })
     socket.on('cancelTimeout', () => {
-      g.cancelTimeout(socket.id)
+      try {
+        g.cancelTimeout(socket.id)
+      } catch (error) {
+        console.error(`Error handling cancelTimeout event:`, error);
+      }
     })
     
     // Add legacy handler for old client code
@@ -145,13 +205,15 @@ io.on('connection', socket => {
                     console.log(`Valid pair code: ${data.s} for socket: ${socket.id}`);
                     try {
                         const result = await g.addPlayer(data.u, socket, data.s);
-                        if (!result) {
+                        if (result) {
+                            console.log(`Player joined with pair code ${data.s}: ${data.u} (socket: ${socket.id})`);
+                        } else {
                             console.error(`Failed to create player with pair code for: ${data.u} (socket: ${socket.id})`);
-                            socket.emit('error', 'Failed to create player');
+                            socket.emit('game_error', 'Failed to create player');
                         }
                     } catch (playerError) {
                         console.error(`Error creating player:`, playerError);
-                        socket.emit('error', 'Error creating player');
+                        socket.emit('game_error', 'Error creating player');
                     }
                 } else {
                     console.log(`Invalid pair code: ${data.s} for socket: ${socket.id}`);
@@ -162,18 +224,20 @@ io.on('connection', socket => {
                 try {
                     // Create new player
                     const result = await g.addPlayer(data.u, socket);
-                    if (!result) {
+                    if (result) {
+                        console.log(`Player created successfully for: ${data.u} (socket: ${socket.id})`);
+                    } else {
                         console.error(`Failed to create player for: ${data.u} (socket: ${socket.id})`);
-                        socket.emit('error', 'Failed to create player');
+                        socket.emit('game_error', 'Failed to create player');
                     }
                 } catch (error) {
                     console.error(`Error creating player:`, error);
-                    socket.emit('error', 'Server error creating player');
+                    socket.emit('game_error', 'Server error creating player');
                 }
             }
         } catch (error) {
             console.error(`Error processing join request:`, error);
-            socket.emit('error', 'Server error processing join request');
+            socket.emit('game_error', 'Server error processing join request');
         }
     })
 })
