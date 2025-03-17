@@ -25,23 +25,6 @@ const io = new Server(httpServer, {
 })
 const g = new game()
 
-// Global helper to emit ready event to a socket
-const emitReadyEvent = (socket) => {
-    // Try multiple approaches to ensure the event is delivered
-    console.log(`GLOBAL: Emitting ready event to socket ${socket.id}`);
-    
-    // Direct emit
-    socket.emit('ready');
-    
-    // Also try using the io instance
-    io.to(socket.id).emit('ready');
-    
-    // Broadcast to everyone including the socket
-    io.emit('playerReady', { socketId: socket.id });
-    
-    console.log(`GLOBAL: Ready events emitted to socket ${socket.id}`);
-};
-
 let stars = []
 for (let i = 0; i < 25000; i++) {
     stars.push(new star(10000, 10000))
@@ -60,10 +43,6 @@ io.on('connection', socket => {
     console.log(`New socket connection: ${socket.id}`);
     g.addConnection(socket)
     socket.emit('stars', stars)
-    
-    // Add test event to verify Socket.io is working
-    console.log(`Emitting test event to socket: ${socket.id}`);
-    socket.emit('test_event', { message: 'This is a test event' });
     
     socket.on('update', (data) => {
         if (data === null) {
@@ -152,16 +131,9 @@ io.on('connection', socket => {
                 const isValid = await g.redisManager.isPairCodeRegistered(data.s);
                 if (isValid) {
                     console.log(`Valid pair code: ${data.s} for socket: ${socket.id}`);
-                    // Valid pair code, proceed with player creation
                     try {
                         const result = await g.addPlayer(data.u, socket);
-                        if (result) {
-                            console.log(`Player created successfully with pair code for: ${data.u} (socket: ${socket.id})`);
-                            console.log(`DIRECT EMIT: Emitting ready event directly from addPlayer handler`);
-                            
-                            // Use the global helper function
-                            emitReadyEvent(socket);
-                        } else {
+                        if (!result) {
                             console.error(`Failed to create player with pair code for: ${data.u} (socket: ${socket.id})`);
                             socket.emit('error', 'Failed to create player');
                         }
@@ -174,27 +146,21 @@ io.on('connection', socket => {
                     socket.emit('pairError');
                 }
             } else {
-                console.log(`Processing legacy player creation for: ${data.u} (socket: ${socket.id})`);
+                console.log(`Processing player creation for: ${data.u} (socket: ${socket.id})`);
                 try {
                     // Create new player
                     const result = await g.addPlayer(data.u, socket);
-                    if (result) {
-                        console.log(`Legacy player created successfully for: ${data.u} (socket: ${socket.id})`);
-                        console.log(`DIRECT EMIT: Emitting ready event directly from addPlayer handler`);
-                        
-                        // Use the global helper function
-                        emitReadyEvent(socket);
-                    } else {
+                    if (!result) {
                         console.error(`Failed to create player for: ${data.u} (socket: ${socket.id})`);
                         socket.emit('error', 'Failed to create player');
                     }
                 } catch (error) {
-                    console.error(`Error creating legacy player:`, error);
+                    console.error(`Error creating player:`, error);
                     socket.emit('error', 'Server error creating player');
                 }
             }
         } catch (error) {
-            console.error(`Error processing legacy join request:`, error);
+            console.error(`Error processing join request:`, error);
             socket.emit('error', 'Server error processing join request');
         }
     })

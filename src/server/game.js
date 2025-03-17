@@ -152,25 +152,12 @@ export class game {
                 
                 // Check socket state before emitting
                 console.log(`Socket connected status: ${socket.connected}`);
-                console.log(`Socket object type: ${typeof socket}`);
                 console.log(`Socket emit function type: ${typeof socket.emit}`);
-                console.log(`Socket ID before emitting 'ready': ${socket.id}`);
-                console.log(`TRACE: About to emit 'ready' event to socket: ${socket.id} - ${Date.now()}`);
                 
-                // Send ready event through socket with extra check
+                // Send ready event through socket
                 try {
                     if (socket && typeof socket.emit === 'function') {
-                        console.log(`TRACE: Inside emit condition for socket: ${socket.id}`);
-                        
-                        // Emit directly to the socket
                         socket.emit('ready');
-                        console.log(`TRACE: After socket.emit('ready') call for: ${socket.id}`);
-                        
-                        // Also broadcast to the room with this socket ID to catch any reconnections
-                        socket.join(socket.id);
-                        socket.to(socket.id).emit('ready');
-                        console.log(`TRACE: Broadcast 'ready' event to room: ${socket.id}`);
-                        
                         console.log(`'ready' event emitted successfully to socket: ${socket.id}`);
                     } else {
                         console.error(`Socket invalid or missing emit function`);

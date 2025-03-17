@@ -22,54 +22,15 @@ socket.on('disconnect', (reason) => {
     console.log('Disconnected:', reason);
 })
 
-// Test event to verify Socket.io is working
-socket.on('test_event', (data) => {
-    console.log('TEST EVENT RECEIVED:', data);
-    // If we receive this, Socket.io is working
-    document.getElementById('error').classList.remove("hidden");
-    document.getElementById('error').innerHTML = "Socket.io is working! Test event received.";
-})
-
-// Enhanced debugging for socket connection
+// Socket connection handler
 socket.on('connect', () => {
     console.log("Client connected successfully with ID:", socket.id);
-    
-    // For testing purposes, log the current state of UI elements
-    console.log("UI state at connection:", {
-        playMenuHidden: document.getElementById('play-menu')?.classList.contains('hidden'),
-        gameHidden: document.getElementById('game')?.classList.contains('hidden'),
-        leaderboardHidden: document.getElementById('leaderboard')?.classList.contains('hidden')
-    });
-    
-    // Create emergency button
-    setTimeout(createEmergencyButton, 1000);
 })
 
-// Add debugging for specific events
+// Ready event handler
 socket.on('ready', () => {
-    console.log("Received 'ready' event - should show play button");
-    
-    // Log before UI changes
-    console.log("UI before ready event:", {
-        playMenuHidden: document.getElementById('play-menu')?.classList.contains('hidden'),
-        gameHidden: document.getElementById('game')?.classList.contains('hidden'),
-        leaderboardHidden: document.getElementById('leaderboard')?.classList.contains('hidden')
-    });
-    
+    console.log("Received 'ready' event - showing game interface");
     showGameInterface();
-})
-
-// Add handler for the broadcast playerReady event
-socket.on('playerReady', (data) => {
-    console.log(`Received playerReady broadcast for socket: ${data.socketId}`);
-    
-    // Only handle if it's for our socket
-    if (data.socketId === socket.id) {
-        console.log(`This playerReady is for us! Showing game interface.`);
-        showGameInterface();
-    } else {
-        console.log(`Ignoring playerReady for different socket: ${data.socketId}`);
-    }
 })
 
 socket.on('error', (error) => {
@@ -150,67 +111,6 @@ addEventListener('visibilitychange', () => {
     }
 })
 
-// Remove the problematic socket.on override that broke event handling
-// const originalOn = socket.on;
-// socket.on = function(event, callback) {
-//     if (event !== 'update') { // Skip logging update events as they're frequent
-//         const wrappedCallback = function(...args) {
-//             console.log(`Socket event received: ${event}`, args.length > 0 ? args : '');
-//             return callback.apply(this, args);
-//         };
-//         return originalOn.call(this, event, wrappedCallback);
-//     } else {
-//         return originalOn.call(this, event, callback);
-//     }
-// };
-
-// Add simple console logs to debug events without overriding
-socket.onAny((event, ...args) => {
-    if (event !== 'update') {
-        console.log(`Event received: ${event}`, args.length > 0 ? args : '');
-    }
-});
-
-// Add fallback ready event listener from DOM
-document.addEventListener('socket:ready', () => {
-    console.log("Received custom 'socket:ready' event from DOM");
-    showGameInterface();
-});
-
-// Create emergency button dynamically
-const createEmergencyButton = () => {
-    // Check if button already exists
-    if (document.getElementById('manual-ready')) return;
-    
-    // Create container
-    const container = document.createElement('div');
-    container.style.position = 'fixed';
-    container.style.bottom = '10px';
-    container.style.right = '10px';
-    container.style.zIndex = '1000';
-    container.style.background = 'rgba(0,0,0,0.7)';
-    container.style.padding = '10px';
-    container.style.borderRadius = '5px';
-    
-    // Create button
-    const button = document.createElement('button');
-    button.id = 'manual-ready';
-    button.innerText = 'Show Game';
-    button.style.cursor = 'pointer';
-    button.style.padding = '5px 10px';
-    
-    // Add click event
-    button.addEventListener('click', () => {
-        console.log("Manual show game button clicked");
-        showGameInterface();
-    });
-    
-    // Append to DOM
-    container.appendChild(button);
-    document.body.appendChild(container);
-    console.log("Emergency button created and added to DOM");
-};
-
 // Centralized function to show the game interface
 function showGameInterface() {
     try {
@@ -218,25 +118,10 @@ function showGameInterface() {
         const game = document.getElementById('game');
         const leaderboard = document.getElementById('leaderboard');
         
-        if (!playMenu || !game || !leaderboard) {
-            console.error('Missing UI elements:', {
-                playMenu: !!playMenu,
-                game: !!game,
-                leaderboard: !!leaderboard
-            });
-        }
-        
-        // Apply UI changes safely
+        // Apply UI changes
         if (playMenu) playMenu.classList.add("hidden");
         if (game) game.classList.remove("hidden");
         if (leaderboard) leaderboard.classList.remove("hidden");
-        
-        // Log after UI changes to confirm they took effect
-        console.log("UI after manual ready:", {
-            playMenuHidden: playMenu?.classList.contains('hidden'),
-            gameHidden: game?.classList.contains('hidden'),
-            leaderboardHidden: leaderboard?.classList.contains('hidden')
-        });
         
         // Activate player listener
         activatePlayerListener();
@@ -263,7 +148,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // For multiplayer mode
     const multiUsernameInput = document.getElementById('username-input');
-    const pairCodeInput = document.getElementById('pair-input');
     const multiPlayButton = document.getElementById('play-button-multi');
     
     if (multiUsernameInput && multiPlayButton) {
