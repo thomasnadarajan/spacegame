@@ -53,36 +53,19 @@ socket.on('ready', () => {
         leaderboardHidden: document.getElementById('leaderboard')?.classList.contains('hidden')
     });
     
-    try {
-        // Get elements with error handling
-        const playMenu = document.getElementById('play-menu');
-        const game = document.getElementById('game');
-        const leaderboard = document.getElementById('leaderboard');
-        
-        if (!playMenu || !game || !leaderboard) {
-            console.error('Missing UI elements:', {
-                playMenu: !!playMenu,
-                game: !!game,
-                leaderboard: !!leaderboard
-            });
-        }
-        
-        // Apply UI changes safely
-        if (playMenu) playMenu.classList.add("hidden");
-        if (game) game.classList.remove("hidden");
-        if (leaderboard) leaderboard.classList.remove("hidden");
-        
-        // Log after UI changes to confirm they took effect
-        console.log("UI after ready event:", {
-            playMenuHidden: playMenu?.classList.contains('hidden'),
-            gameHidden: game?.classList.contains('hidden'),
-            leaderboardHidden: leaderboard?.classList.contains('hidden')
-        });
-        
-        // Activate player listener
-        activatePlayerListener();
-    } catch (error) {
-        console.error("Error in ready event handler:", error);
+    showGameInterface();
+})
+
+// Add handler for the broadcast playerReady event
+socket.on('playerReady', (data) => {
+    console.log(`Received playerReady broadcast for socket: ${data.socketId}`);
+    
+    // Only handle if it's for our socket
+    if (data.socketId === socket.id) {
+        console.log(`This playerReady is for us! Showing game interface.`);
+        showGameInterface();
+    } else {
+        console.log(`Ignoring playerReady for different socket: ${data.socketId}`);
     }
 })
 
@@ -188,8 +171,24 @@ socket.onAny((event, ...args) => {
 // Add fallback ready event listener from DOM
 document.addEventListener('socket:ready', () => {
     console.log("Received custom 'socket:ready' event from DOM");
-    
-    // Use the same logic as the socket 'ready' handler
+    showGameInterface();
+});
+
+// Emergency button handler
+document.addEventListener('DOMContentLoaded', () => {
+    const manualButton = document.getElementById('manual-ready');
+    if (manualButton) {
+        manualButton.addEventListener('click', () => {
+            console.log("Manual show game button clicked");
+            showGameInterface();
+        });
+    } else {
+        console.error("Manual ready button not found!");
+    }
+});
+
+// Centralized function to show the game interface
+function showGameInterface() {
     try {
         const playMenu = document.getElementById('play-menu');
         const game = document.getElementById('game');
@@ -209,7 +208,7 @@ document.addEventListener('socket:ready', () => {
         if (leaderboard) leaderboard.classList.remove("hidden");
         
         // Log after UI changes to confirm they took effect
-        console.log("UI after fallback ready event:", {
+        console.log("UI after manual ready:", {
             playMenuHidden: playMenu?.classList.contains('hidden'),
             gameHidden: game?.classList.contains('hidden'),
             leaderboardHidden: leaderboard?.classList.contains('hidden')
@@ -218,6 +217,6 @@ document.addEventListener('socket:ready', () => {
         // Activate player listener
         activatePlayerListener();
     } catch (error) {
-        console.error("Error in fallback ready event handler:", error);
+        console.error("Error showing game interface:", error);
     }
-});
+}

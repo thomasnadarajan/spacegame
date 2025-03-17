@@ -25,6 +25,23 @@ const io = new Server(httpServer, {
 })
 const g = new game()
 
+// Global helper to emit ready event to a socket
+const emitReadyEvent = (socket) => {
+    // Try multiple approaches to ensure the event is delivered
+    console.log(`GLOBAL: Emitting ready event to socket ${socket.id}`);
+    
+    // Direct emit
+    socket.emit('ready');
+    
+    // Also try using the io instance
+    io.to(socket.id).emit('ready');
+    
+    // Broadcast to everyone including the socket
+    io.emit('playerReady', { socketId: socket.id });
+    
+    console.log(`GLOBAL: Ready events emitted to socket ${socket.id}`);
+};
+
 let stars = []
 for (let i = 0; i < 25000; i++) {
     stars.push(new star(10000, 10000))
@@ -141,8 +158,9 @@ io.on('connection', socket => {
                         if (result) {
                             console.log(`Player created successfully with pair code for: ${data.u} (socket: ${socket.id})`);
                             console.log(`DIRECT EMIT: Emitting ready event directly from addPlayer handler`);
-                            // Direct ready event emission as a fallback
-                            socket.emit('ready');
+                            
+                            // Use the global helper function
+                            emitReadyEvent(socket);
                         } else {
                             console.error(`Failed to create player with pair code for: ${data.u} (socket: ${socket.id})`);
                             socket.emit('error', 'Failed to create player');
@@ -163,8 +181,9 @@ io.on('connection', socket => {
                     if (result) {
                         console.log(`Legacy player created successfully for: ${data.u} (socket: ${socket.id})`);
                         console.log(`DIRECT EMIT: Emitting ready event directly from addPlayer handler`);
-                        // Direct ready event emission as a fallback
-                        socket.emit('ready');
+                        
+                        // Use the global helper function
+                        emitReadyEvent(socket);
                     } else {
                         console.error(`Failed to create player for: ${data.u} (socket: ${socket.id})`);
                         socket.emit('error', 'Failed to create player');
