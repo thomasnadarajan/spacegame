@@ -132,12 +132,20 @@ io.on('connection', socket => {
                 if (isValid) {
                     console.log(`Valid pair code: ${data.s} for socket: ${socket.id}`);
                     // Valid pair code, proceed with player creation
-                    const result = await g.addPlayer(data.u, socket);
-                    if (result) {
-                        console.log(`Player created successfully with pair code for: ${data.u} (socket: ${socket.id})`);
-                    } else {
-                        console.error(`Failed to create player with pair code for: ${data.u} (socket: ${socket.id})`);
-                        socket.emit('error', 'Failed to create player');
+                    try {
+                        const result = await g.addPlayer(data.u, socket);
+                        if (result) {
+                            console.log(`Player created successfully with pair code for: ${data.u} (socket: ${socket.id})`);
+                            console.log(`DIRECT EMIT: Emitting ready event directly from addPlayer handler`);
+                            // Direct ready event emission as a fallback
+                            socket.emit('ready');
+                        } else {
+                            console.error(`Failed to create player with pair code for: ${data.u} (socket: ${socket.id})`);
+                            socket.emit('error', 'Failed to create player');
+                        }
+                    } catch (playerError) {
+                        console.error(`Error creating player:`, playerError);
+                        socket.emit('error', 'Error creating player');
                     }
                 } else {
                     console.log(`Invalid pair code: ${data.s} for socket: ${socket.id}`);
@@ -150,6 +158,9 @@ io.on('connection', socket => {
                     const result = await g.addPlayer(data.u, socket);
                     if (result) {
                         console.log(`Legacy player created successfully for: ${data.u} (socket: ${socket.id})`);
+                        console.log(`DIRECT EMIT: Emitting ready event directly from addPlayer handler`);
+                        // Direct ready event emission as a fallback
+                        socket.emit('ready');
                     } else {
                         console.error(`Failed to create player for: ${data.u} (socket: ${socket.id})`);
                         socket.emit('error', 'Failed to create player');

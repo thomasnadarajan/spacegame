@@ -78,20 +78,6 @@ socket.on('ready', () => {
     }
 })
 
-// Log all incoming socket events for debugging
-const originalOn = socket.on;
-socket.on = function(event, callback) {
-    if (event !== 'update') { // Skip logging update events as they're frequent
-        const wrappedCallback = function(...args) {
-            console.log(`Socket event received: ${event}`, args.length > 0 ? args : '');
-            return callback.apply(this, args);
-        };
-        return originalOn.call(this, event, wrappedCallback);
-    } else {
-        return originalOn.call(this, event, callback);
-    }
-};
-
 socket.on('error', (error) => {
     console.error("Received error from server:", error);
     document.getElementById('error').classList.remove("hidden");
@@ -169,3 +155,18 @@ addEventListener('visibilitychange', () => {
         socket.emit('cancelTimeout')
     }
 })
+
+// Log all incoming socket events for debugging
+// MOVED AFTER all handlers are registered
+const originalOn = socket.on;
+socket.on = function(event, callback) {
+    if (event !== 'update') { // Skip logging update events as they're frequent
+        const wrappedCallback = function(...args) {
+            console.log(`Socket event received: ${event}`, args.length > 0 ? args : '');
+            return callback.apply(this, args);
+        };
+        return originalOn.call(this, event, wrappedCallback);
+    } else {
+        return originalOn.call(this, event, callback);
+    }
+};
