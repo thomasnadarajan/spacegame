@@ -156,17 +156,23 @@ addEventListener('visibilitychange', () => {
     }
 })
 
-// Log all incoming socket events for debugging
-// MOVED AFTER all handlers are registered
-const originalOn = socket.on;
-socket.on = function(event, callback) {
-    if (event !== 'update') { // Skip logging update events as they're frequent
-        const wrappedCallback = function(...args) {
-            console.log(`Socket event received: ${event}`, args.length > 0 ? args : '');
-            return callback.apply(this, args);
-        };
-        return originalOn.call(this, event, wrappedCallback);
-    } else {
-        return originalOn.call(this, event, callback);
+// Remove the problematic socket.on override that broke event handling
+// const originalOn = socket.on;
+// socket.on = function(event, callback) {
+//     if (event !== 'update') { // Skip logging update events as they're frequent
+//         const wrappedCallback = function(...args) {
+//             console.log(`Socket event received: ${event}`, args.length > 0 ? args : '');
+//             return callback.apply(this, args);
+//         };
+//         return originalOn.call(this, event, wrappedCallback);
+//     } else {
+//         return originalOn.call(this, event, callback);
+//     }
+// };
+
+// Add simple console logs to debug events without overriding
+socket.onAny((event, ...args) => {
+    if (event !== 'update') {
+        console.log(`Event received: ${event}`, args.length > 0 ? args : '');
     }
-};
+});
