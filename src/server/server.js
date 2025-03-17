@@ -52,6 +52,34 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', port: PORT });
 });
 
+// Route to test socket.io connection
+app.get('/socket.io-test', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Socket.IO Test</title>
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+          const socket = io();
+          socket.on('connect', () => {
+            document.getElementById('status').textContent = 'Connected to Socket.IO';
+            document.getElementById('id').textContent = socket.id;
+          });
+          socket.on('connect_error', (err) => {
+            document.getElementById('status').textContent = 'Connection error: ' + err.message;
+          });
+        </script>
+      </head>
+      <body>
+        <h1>Socket.IO Connection Test</h1>
+        <p>Status: <span id="status">Connecting...</span></p>
+        <p>Socket ID: <span id="id">Not connected</span></p>
+      </body>
+    </html>
+  `);
+});
+
 console.log('server running!')
 
 io.on('connection', socket => {

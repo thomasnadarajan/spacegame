@@ -5,6 +5,13 @@ window.GAME_SERVER_URL = "http://spacegame-prod-apse2.eba-f2rssycw.ap-southeast-
 // Enable Socket.IO debug logging in development
 window.DEBUG = true;
 
+// Socket.IO paths to try
+window.SOCKET_PATHS = [
+  "/socket.io/",
+  "/",
+  ""
+];
+
 // Ensure we're using compatible transport methods
 window.SOCKET_OPTIONS = {
   transports: ['polling', 'websocket'],
