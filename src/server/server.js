@@ -31,12 +31,9 @@ const io = new Server(httpServer, {
     credentials: true
   },
   allowEIO3: true,
-  pingTimeout: 60000,
-  pingInterval: 25000,
   transports: ['polling', 'websocket'],
-  connectTimeout: 30000,
-  upgradeTimeout: 30000,
-  maxHttpBufferSize: 1e8
+  path: '/socket.io/',
+  connectTimeout: 30000
 })
 const g = new game()
 
