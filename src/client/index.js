@@ -34,8 +34,8 @@ socket.on = function(event, callback) {
 
 const originalEmit = socket.emit;
 socket.emit = function(event, ...args) {
-    console.log(`[DEBUG] Emitting event '${event}'`, ...args);
-    return originalEmit.apply(this, event, ...args);
+    console.log(`[DEBUG] Emitting event '${event}'`, args);
+    return originalEmit.apply(this, event, args);
 };
 
 const showMulti = () => {
