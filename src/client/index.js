@@ -6,10 +6,20 @@ import { disablePlayerListener, requestUserDetails, activatePlayerListener } fro
 
 // Connect to the Elastic Beanstalk endpoint explicitly
 const socket = io(window.location.origin, {
-    transports: ['websocket', 'polling'],
-    reconnectionAttempts: 5,
+    transports: ['polling', 'websocket'],  // Try polling first, fall back to websocket
+    reconnectionAttempts: 10,
     reconnectionDelay: 1000,
-    timeout: 10000
+    reconnectionDelayMax: 5000,
+    timeout: 20000
+})
+
+// Add connection status logging
+socket.on('connect_error', (err) => {
+    console.error('Connection error:', err);
+})
+
+socket.on('disconnect', (reason) => {
+    console.log('Disconnected:', reason);
 })
 
 const showMulti = () => {
