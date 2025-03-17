@@ -82,7 +82,19 @@ io.on('connection', socket => {
                 if (isValid) {
                     console.log(`Valid pair code: ${data.code} for socket: ${socket.id}`);
                     // Valid pair code, can join
-                    // Process logic here...
+                    try {
+                        // Add the player with the pair code
+                        const result = await g.addPlayer(data.name, socket, data.code);
+                        if (result) {
+                            console.log(`Player joined with pair code ${data.code}: ${data.name} (socket: ${socket.id})`);
+                        } else {
+                            console.error(`Failed to join player with pair code for: ${data.name} (socket: ${socket.id})`);
+                            socket.emit('error', 'Failed to join with pair code');
+                        }
+                    } catch (error) {
+                        console.error(`Error joining with pair code:`, error);
+                        socket.emit('error', 'Server error joining with pair code');
+                    }
                 } else {
                     console.log(`Invalid pair code: ${data.code} for socket: ${socket.id}`);
                     socket.emit('pairError');

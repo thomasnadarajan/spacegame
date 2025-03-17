@@ -80,10 +80,84 @@ export class game {
         }
         return false;
     }
-    async addPlayer(user, socket) {
+    async addPlayer(user, socket, existingPairCode = null) {
         console.log(`Attempting to add player: ${user} with socket ID: ${socket.id}`);
         try {
-            // Generate random ship position and ID
+            // If joining with an existing pair code
+            if (existingPairCode) {
+                console.log(`Joining with existing pair code: ${existingPairCode}`);
+                
+                // Check if pair code exists in our pairs object
+                if (this.pairs[existingPairCode]) {
+                    const pairData = this.pairs[existingPairCode];
+                    const shipId = pairData.ship;
+                    
+                    // Check if the ship exists
+                    if (this.ships[shipId]) {
+                        console.log(`Using existing ship with ID: ${shipId}`);
+                        const shipObj = this.ships[shipId];
+                        
+                        // Create player with existing ship ID and pair code
+                        const newPlayer = new player(user, shipId, 1, 2, existingPairCode);
+                        
+                        // Update player's world position based on ship
+                        newPlayer.worldPosition = {
+                            x: (newPlayer.position.x * shipObj.shipblock) - newPlayer.width / 2 + shipObj.shipblock / 2,
+                            y: (newPlayer.position.y * shipObj.shipblock) - newPlayer.height / 2 + shipObj.shipblock / 2
+                        };
+                        
+                        // Store player in game state
+                        this.players[socket.id] = newPlayer;
+                        
+                        // Add player to ship's player list
+                        this.ships[shipId].addPlayer(socket.id);
+                        
+                        // Add player to the pair's player list
+                        this.pairs[existingPairCode].players.push(socket.id);
+                        
+                        // Prepare clean player data for Redis
+                        const playerData = {
+                            username: user,
+                            position: newPlayer.position,
+                            worldPosition: newPlayer.worldPosition,
+                            health: newPlayer.health,
+                            currentShip: shipId,
+                            playerView: true,
+                            pair: existingPairCode,
+                            keys: {}
+                        };
+                        
+                        console.log(`Saving player data to Redis with existing pair code`);
+                        // Save to Redis
+                        await this.redisManager.addPlayer(socket.id, playerData);
+                        
+                        // Send ready event through socket
+                        try {
+                            if (socket && typeof socket.emit === 'function') {
+                                socket.emit('ready');
+                                console.log(`'ready' event emitted successfully to socket: ${socket.id}`);
+                            } else {
+                                console.error(`Socket invalid or missing emit function`);
+                            }
+                        } catch (emitError) {
+                            console.error(`Error emitting 'ready' event:`, emitError);
+                        }
+                        
+                        return {
+                            player: newPlayer,
+                            ship: shipObj
+                        };
+                    } else {
+                        console.error(`Ship with ID ${shipId} not found for pair code ${existingPairCode}`);
+                        return false;
+                    }
+                } else {
+                    console.error(`Pair code ${existingPairCode} not found in local state`);
+                    return false;
+                }
+            }
+            
+            // Generate random ship position and ID for new players
             const x = 5000 * (0.25 + Math.random() * 0.5)
             const y = 5000 * (0.25 + Math.random() * 0.5)
             const ship_id = Math.floor(1000 + Math.random() * 9000)

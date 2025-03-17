@@ -337,6 +337,18 @@ export class RedisManager {
         }
     }
 
+    async isPairCodeRegistered(pairCode) {
+        try {
+            // Check if the pair code exists in Redis
+            const exists = await this.redis.hexists('pair_instances', pairCode);
+            console.log(`Checking if pair code ${pairCode} exists: ${exists}`);
+            return exists === 1;
+        } catch (err) {
+            console.error('Error checking if pair code exists:', err);
+            return false;
+        }
+    }
+
     loadEnvFromFile() {
         try {
             // Check for .env file in current directory
