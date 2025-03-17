@@ -144,7 +144,7 @@ io.on('connection', socket => {
                 if (isValid) {
                     console.log(`Valid pair code: ${data.s} for socket: ${socket.id}`);
                     try {
-                        const result = await g.addPlayer(data.u, socket);
+                        const result = await g.addPlayer(data.u, socket, data.s);
                         if (!result) {
                             console.error(`Failed to create player with pair code for: ${data.u} (socket: ${socket.id})`);
                             socket.emit('error', 'Failed to create player');
