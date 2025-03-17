@@ -283,6 +283,16 @@ io.on('connection', socket => {
             socket.emit('game_error', 'Server error processing join request');
         }
     })
+
+    // Add ping handler for testing
+    socket.on('ping', (callback) => {
+        console.log(`Received ping from ${socket.id}`);
+        if (typeof callback === 'function') {
+            callback();
+        } else {
+            socket.emit('pong');
+        }
+    });
 })
 httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`)
