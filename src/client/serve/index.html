@@ -1,22 +1,24 @@
 <!DOCTYPE html>
-<head> <link href="https://fonts.googleapis.com/css2?family=Antonio&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="main.css">
+<html>
+<head>
+  <title>Space Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Antonio&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="main.css">
 </head>
 
 <body>
-
-<canvas id = "game" class="hidden"></canvas>
-<div id="play-menu">
+  <canvas id="game" class="hidden"></canvas>
+  <div id="play-menu">
     <h1>BRIDGE</h1>
-    <p class="hidden" id = "error"> Test </p>
+    <p class="hidden" id="error">Test</p>
     <hr />
     <div id="play-menu-buttons">
-        <div class="container">
-          <button id="solo-button">SOLO</button>
-        </div>
-        <div class="container">
-          <button id="join-button">JOIN</button>
-        </div>
+      <div class="container">
+        <button id="solo-button">SOLO</button>
+      </div>
+      <div class="container">
+        <button id="join-button">JOIN</button>
+      </div>
     </div>
     <div id="multiplayer-buttons" class="hidden">
       <div class="button-container">
@@ -56,5 +58,7 @@
       <tr><td></td><td></td></tr>
     </table>
   </div>
-<script defer src="client.js"></script>
+  <script defer src="config.js"></script>
+  <script defer src="client.js"></script>
 </body>
+</html>
