@@ -187,10 +187,19 @@ export class gamemanager {
     }
 
     addPlayer(user, pair) {
+        console.log(`CLIENT: Calling addPlayer with user="${user}" and pair=${pair}`);
+        
+        // Add a timeout to log socket state
+        setTimeout(() => {
+            console.log(`CLIENT: Socket state check - connected: ${this.socket.connected}, id: ${this.socket.id}`);
+        }, 500);
+        
         if (pair === null) {
+            console.log(`CLIENT: Emitting 'addPlayer' with {u: ${user}, s: null}`);
             this.socket.emit('addPlayer', {u: user, s: null})
         }
         else {
+            console.log(`CLIENT: Emitting 'addPlayer' with {u: ${user}, s: ${pair}}`);
             this.socket.emit('addPlayer', {u: user, s: pair})
         }
     }
