@@ -21,8 +21,7 @@ window.SOCKET_OPTIONS = {
   reconnectionDelay: 1000,
   reconnectionDelayMax: 5000,
   timeout: 30000,
-  autoConnect: false,
+  autoConnect: true,
   withCredentials: false,
-  path: "/socket.io/",
-  query: {}
+  path: "/socket.io/"
 }; 

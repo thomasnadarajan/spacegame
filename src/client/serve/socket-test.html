@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Socket.IO Connection Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .status {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+    }
+    .warning {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+    pre {
+      background-color: #f8f9fa;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    button {
+      padding: 8px 16px;
+      margin: 5px;
+      cursor: pointer;
+    }
+  </style>
+  <!-- Include Socket.IO client directly -->
+  <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.7.5/dist/socket.io.min.js"></script>
+</head>
+<body>
+  <h1>Socket.IO Connection Test</h1>
+  
+  <div id="config-section">
+    <h2>Configuration</h2>
+    <p>Server URL: <span id="server-url"></span></p>
+    <p>Socket.IO Path: <span id="socket-path"></span></p>
+    <p>Transports: <span id="transports"></span></p>
+  </div>
+  
+  <div id="connection-section">
+    <h2>Connection</h2>
+    <p id="connection-status" class="status info">Initializing...</p>
+    <p>Socket ID: <span id="socket-id">Not connected</span></p>
+    <div>
+      <button id="connect-btn">Connect</button>
+      <button id="disconnect-btn">Disconnect</button>
+    </div>
+  </div>
+  
+  <div id="test-section">
+    <h2>Tests</h2>
+    <div>
+      <button id="ping-btn" disabled>Send Ping</button>
+      <span id="ping-result"></span>
+    </div>
+  </div>
+  
+  <div id="log-section">
+    <h2>Log</h2>
+    <pre id="log-output"></pre>
+  </div>
+
+  <script src="config.js"></script>
+  <script>
+    // Display configuration
+    document.getElementById('server-url').textContent = window.GAME_SERVER_URL || 'Using default';
+    document.getElementById('socket-path').textContent = (window.SOCKET_OPTIONS && window.SOCKET_OPTIONS.path) || '/socket.io/';
+    document.getElementById('transports').textContent = (window.SOCKET_OPTIONS && window.SOCKET_OPTIONS.transports) || 'Default';
+    
+    // Log function
+    function log(message, type = 'info') {
+      const logOutput = document.getElementById('log-output');
+      const timestamp = new Date().toLocaleTimeString();
+      const logLine = `[${timestamp}] ${message}`;
+      
+      console.log(logLine);
+      logOutput.textContent = logLine + '\n' + logOutput.textContent;
+      
+      // Update status if it's a connection-related message
+      if (message.includes('connect') || message.includes('Connect')) {
+        const status = document.getElementById('connection-status');
+        status.textContent = message;
+        status.className = 'status ' + type;
+      }
+    }
+
+    // Connection variables
+    let socket = null;
+    let connected = false;
+    const connectBtn = document.getElementById('connect-btn');
+    const disconnectBtn = document.getElementById('disconnect-btn');
+    const pingBtn = document.getElementById('ping-btn');
+
+    // Connect to Socket.IO server
+    function connect() {
+      if (connected) return;
+      
+      try {
+        log('Attempting to connect to server...');
+        
+        // Get server URL from configuration or use default
+        const serverUrl = window.GAME_SERVER_URL || window.location.origin;
+        
+        // Get Socket.IO options from configuration or use defaults
+        const options = {
+          transports: ['polling', 'websocket'],
+          upgrade: true,
+          forceNew: true,
+          path: '/socket.io/',
+          withCredentials: false
+        };
+        
+        log(`Connecting to ${serverUrl} with path ${options.path}`);
+        
+        // Create Socket.IO instance
+        socket = io(serverUrl, options);
+        
+        // Set up event listeners
+        socket.on('connect', () => {
+          connected = true;
+          log('Connected successfully!', 'success');
+          document.getElementById('socket-id').textContent = socket.id;
+          connectBtn.disabled = true;
+          disconnectBtn.disabled = false;
+          pingBtn.disabled = false;
+        });
+        
+        socket.on('disconnect', (reason) => {
+          connected = false;
+          log(`Disconnected: ${reason}`, 'warning');
+          document.getElementById('socket-id').textContent = 'Not connected';
+          connectBtn.disabled = false;
+          disconnectBtn.disabled = true;
+          pingBtn.disabled = true;
+        });
+        
+        socket.on('connect_error', (error) => {
+          log(`Connection error: ${error.message}`, 'error');
+        });
+        
+        socket.on('error', (error) => {
+          log(`Socket error: ${error}`, 'error');
+        });
+        
+        socket.on('pong', (latency) => {
+          log(`Received pong! Latency: ${latency}ms`, 'success');
+          document.getElementById('ping-result').textContent = `Latency: ${latency}ms`;
+        });
+      } catch (error) {
+        log(`Error creating socket: ${error.message}`, 'error');
+      }
+    }
+
+    // Disconnect from server
+    function disconnect() {
+      if (!connected || !socket) return;
+      
+      log('Disconnecting from server...');
+      socket.disconnect();
+    }
+
+    // Send ping to server
+    function sendPing() {
+      if (!connected || !socket) return;
+      
+      const start = Date.now();
+      log('Sending ping to server...');
+      
+      socket.emit('ping', () => {
+        const latency = Date.now() - start;
+        log(`Received pong response! Latency: ${latency}ms`, 'success');
+        document.getElementById('ping-result').textContent = `Latency: ${latency}ms`;
+      });
+    }
+
+    // Set up button event listeners
+    connectBtn.addEventListener('click', connect);
+    disconnectBtn.addEventListener('click', disconnect);
+    pingBtn.addEventListener('click', sendPing);
+    
+    // Initialize
+    window.onload = function() {
+      disconnectBtn.disabled = true;
+      pingBtn.disabled = true;
+      
+      log('Test page initialized. Click "Connect" to test the connection.');
+    };
+  </script>
+</body>
+</html> 
