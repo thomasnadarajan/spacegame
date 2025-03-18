@@ -60,4 +60,4 @@ src/client/serve/assets/*.png
 
 # Generated files
 .cache/
-coverage/
+coverage/bucket-policy.json
