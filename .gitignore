@@ -5,6 +5,9 @@ yarn-debug.log
 yarn-error.log
 package-lock.json
 
+# AWS S3 Bucket Policy
+bucket-policy.json
+
 # Distribution / builds
 dist/
 deploy/
