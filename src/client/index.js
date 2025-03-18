@@ -13,74 +13,34 @@ if (window.DEBUG) {
     localStorage.debug = '*';
 }
 
-// Function to try connecting with different paths
-function connectWithFallback(currentPathIndex = 0) {
-    // Get paths from config or use default
-    const paths = window.SOCKET_PATHS || ["/socket.io/", "/", ""];
-    
-    if (currentPathIndex >= paths.length) {
-        console.error("Failed to connect with all paths");
-        document.getElementById('error').classList.remove("hidden");
-        document.getElementById('error').innerHTML = "Failed to connect to server. Please try again later.";
-        return null;
-    }
-    
-    const options = {...(window.SOCKET_OPTIONS || {
-        transports: ['polling', 'websocket'],
-        reconnectionAttempts: 10,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        timeout: 30000,
-        forceNew: true,
-        upgrade: true,
-        autoConnect: true,
-        rejectUnauthorized: false
-    })};
-    
-    // Override the path with the current one we're trying
-    options.path = paths[currentPathIndex];
-    
-    console.log(`Trying to connect with path: ${options.path}`);
-    
-    const socket = io(SERVER_URL, options);
-    
-    // Set a timeout to try the next path if this one fails
-    const timeoutId = setTimeout(() => {
-        console.log(`Connection with path ${options.path} timed out, trying next path...`);
-        socket.close();
-        initializeSocket(connectWithFallback(currentPathIndex + 1));
-    }, 5000);
-    
-    socket.on('connect', () => {
-        console.log(`Successfully connected with path: ${options.path}`);
-        clearTimeout(timeoutId);
-    });
-    
-    socket.on('connect_error', (err) => {
-        console.error(`Connection error with path ${options.path}:`, err);
-        // If this is a 404 error, try the next path immediately
-        if (err.message.includes('404')) {
-            clearTimeout(timeoutId);
-            socket.close();
-            initializeSocket(connectWithFallback(currentPathIndex + 1));
-        } else {
-            // Display the error in the UI
-            document.getElementById('error').classList.remove("hidden");
-            document.getElementById('error').innerHTML = "Connection error: " + (err.message || "Unable to connect to server");
-            
-            // Try to reconnect automatically
-            setTimeout(() => {
-                console.log("Attempting to reconnect...");
-                socket.connect();
-            }, 5000);
-        }
-    });
-    
-    return socket;
-}
+// Get Socket.IO options from configuration
+const options = window.SOCKET_OPTIONS || {
+    transports: ['polling'],
+    upgrade: false,
+    forceNew: true,
+    path: '/socket.io/',
+    withCredentials: false
+};
 
-// Connect to the game server using configuration options with fallback
-let socket = connectWithFallback();
+console.log(`Connecting to ${SERVER_URL} with options:`, options);
+const socket = io(SERVER_URL, options);
+
+// Set up event listeners
+socket.on('connect', () => {
+    console.log('Connected successfully!');
+    document.getElementById('error').classList.add("hidden");
+    initializeSocket(socket);
+});
+
+socket.on('connect_error', (error) => {
+    console.error('Connection error:', error);
+    document.getElementById('error').classList.remove("hidden");
+    document.getElementById('error').innerHTML = "Failed to connect to server. Please try again later.";
+});
+
+socket.on('disconnect', (reason) => {
+    console.log(`Disconnected: ${reason}`);
+});
 
 // Initialize socket event handlers
 function initializeSocket(newSocket) {
@@ -188,8 +148,13 @@ export let stars = [];
 function initializeGame() {
     if (!game && socket) {
         game = new gamemanager(socket);
+        // Make game available globally
+        window.game = game;
     }
 }
+
+// Add export for game
+export { game };
 
 // Initialize the game when the socket is ready
 initializeGame();
@@ -258,15 +223,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-
-// Restore function for when player is dead or timed out
-const restore = () => {
-    if (game) {
-        game.currentState = null;
-        game.cancelAnimationFrame();
-    }
-    disablePlayerListener();
-    document.getElementById('play-menu').classList.remove("hidden");
-    document.getElementById('game').classList.add("hidden");
-    document.getElementById('leaderboard').classList.add("hidden");
-};

@@ -1,27 +1,16 @@
 // Game server configuration
 // This will be replaced by the build script with the actual server URL
-window.GAME_SERVER_URL = "GAME_SERVER_URL_PLACEHOLDER";
+window.GAME_SERVER_URL = "https://d2u6z794p1rhlk.cloudfront.net";
 
 // Enable Socket.IO debug logging in development
 window.DEBUG = true;
 
-// Socket.IO paths to try
-window.SOCKET_PATHS = [
-  "/socket.io/",
-  "/",
-  ""
-];
-
-// Ensure we're using compatible transport methods
+// Socket.IO configuration
 window.SOCKET_OPTIONS = {
-  transports: ['polling', 'websocket'],
-  upgrade: true,
+  transports: ['polling'],
+  upgrade: false,
+  path: '/socket.io/',
   forceNew: true,
-  reconnectionAttempts: 10,
-  reconnectionDelay: 1000,
-  reconnectionDelayMax: 5000,
-  timeout: 30000,
-  autoConnect: true,
-  withCredentials: false,
-  path: "/socket.io/"
+  reconnection: true,
+  reconnectionAttempts: 5
 }; 

@@ -120,15 +120,15 @@
         const serverUrl = window.GAME_SERVER_URL || window.location.origin;
         
         // Get Socket.IO options from configuration or use defaults
-        const options = {
-          transports: ['polling', 'websocket'],
-          upgrade: true,
+        const options = window.SOCKET_OPTIONS || {
+          transports: ['polling'],
+          upgrade: false,
           forceNew: true,
           path: '/socket.io/',
           withCredentials: false
         };
         
-        log(`Connecting to ${serverUrl} with path ${options.path}`);
+        log(`Connecting to ${serverUrl} with options:`, JSON.stringify(options));
         
         // Create Socket.IO instance
         socket = io(serverUrl, options);
