@@ -8,4 +8,5 @@ const clientConfig = {
     filename: 'client.js',
   },
 }
+
 module.exports = [clientConfig]

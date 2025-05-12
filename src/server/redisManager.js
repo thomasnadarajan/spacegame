@@ -319,7 +319,6 @@ export class RedisManager {
                     type: 'leaderboard:update',
                     data: cleanLeaderboard
                 }));
-                console.log('Leaderboard updated successfully');
             } catch (pubErr) {
                 // Just log the publish error but consider the main operation successful
                 console.error('Error publishing leaderboard update:', pubErr);

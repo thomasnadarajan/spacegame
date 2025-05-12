@@ -33,7 +33,7 @@ export class gamemanager {
             newSocket.on('connect', () => {
                 console.log('Connected to new instance');
                 this.socket = newSocket;
-                this.addPlayer(this.currentState?.me?.user || 'Player', currentPairCode);
+                this.addPlayer(this.socket, this.currentState?.me?.user || 'Player', currentPairCode);
             });
             
             // Add error handler
@@ -41,9 +41,25 @@ export class gamemanager {
                 console.error('Connection error:', error);
             });
         });
+
     }
     setCurrentState(state) {
-        this.currentState = state
+        // Log received player lasers for debugging
+        if (state.playerlasers && state.playerlasers.length > 0) {
+            console.log(`===== RECEIVED ${state.playerlasers.length} PLAYER LASERS IN UPDATE =====`);
+            state.playerlasers.forEach((laser, index) => {
+                console.log(`Server laser ${index}:`, {
+                    x: laser.x,
+                    y: laser.y,
+                    rotation: laser.rotation,
+                    ship: laser.ship,
+                    player: laser.player,
+                    destroyed: laser.destroyed
+                });
+            });
+        }
+        
+        this.currentState = {...this.currentState, ...state}
         this.currentState['weaponsAngle'] = this.weaponsAngle
         this.currentState['weaponsMode'] = this.weaponsMode
         if (this.currentState.me.playerView) {
@@ -69,6 +85,8 @@ export class gamemanager {
                 rows[i + 1].innerHTML = `<td>${entry.pair}</td><td>${entry.score || 0}</td>`
             }
         }
+        
+        this.renderCurrentState()
     }
     updateMousePosition(x, y) {
         const currentMenu = menustack[menustack.length - 1]
@@ -93,26 +111,50 @@ export class gamemanager {
     }
 
     handleWeaponsClick() {
-        this.socket.emit('fire', {angle: this.weaponsAngle, ship: this.currentState.me.currentShip})
+        console.log('Attempting to fire weapon, angle:', this.weaponsAngle, 'mode:', this.weaponsMode)
+        console.log('Current player position:', this.currentState.me.position, 'stationActive:', this.currentState.me.stationActive)
+        console.log('Emitting fire event to server with angle:', this.weaponsAngle, 'ship:', this.currentState.me.currentShip)
+        console.log(this.socket)
+        this.socket.emit('fire', {
+            angle: this.weaponsAngle, 
+            ship: this.currentState.me.currentShip,
+        })
+        console.log('Fire event emitted')
+       
     }
     handlePlayerFire() {
         this.socket.emit('pfire')
     }
     updateMouseClick() {
         const currentMenu = menustack[menustack.length - 1]
+        console.log('Menu click detected, menu:', currentMenu.constructor.name)
         for (const comp in currentMenu.components) {
             const check = currentMenu.components[comp].Mouseover
             if (check) {
+                console.log('Clicked component:', comp, 'type:', currentMenu.components[comp].Type)
                 const ret = currentMenu.clicked(comp, this.currentState)
                 if (ret != null && ret === 'close') {
+                    console.log('Closing menu')
                     menustack.pop()
                     disableMenuListener()
+                    // Tell the server to deactivate the station
+                    this.socket.emit('toggleStation', false);
                 }
                 else if (ret != null && ret === 'weapons') {
+                    console.log('Entering weapons mode')
                     menustack.pop()
                     disableMenuListener()
                     this.weaponsMode = true
+                    
                     enableWeaponsListeners()
+                    // Keep station active during weapons mode
+                    this.socket.emit('toggleStation', true);
+                    
+                    // Trigger a test fire after 1 second to make sure everything is working
+                    setTimeout(() => {
+                        console.log('Auto-testing weapons system...');
+                        if (window.testWeaponsClick) window.testWeaponsClick();
+                    }, 1000);
                 }
             }
         }
@@ -134,28 +176,36 @@ export class gamemanager {
     handleKeyInput(input) {
         if (input === 'use') {
             if (this.weaponsMode) {
-                console.log('weapons')
+                console.log('Exiting weapons mode')
                 this.weaponsMode = false
                 disableWeaponsListeners()
+                // Tell the server to deactivate the station
+                this.socket.emit('toggleStation', false);
             }
             else if (this.currentState.me.position.x === 8 && this.currentState.me.position.y === 2) {
+                console.log('Opening tactical menu')
                 menustack.push(new tacticalmenu(this.currentState.me.currentShip))
                 activateMenuListener()
+                // Tell the server to activate the station
+                this.socket.emit('toggleStation', true);
             }
             else if (this.currentState.me.position.x === 8 && this.currentState.me.position.y === 6) {
                 menustack.push(new transportmenu(this.currentState.me.currentShip))
                 activateMenuListener()
+                // Tell the server to activate the station
+                this.socket.emit('toggleStation', true);
             }
             else if (this.currentState.me.position.x === 3 && this.currentState.me.position.y === 6) {
                 if (this.currentState.me.currentShip !== this.currentState.me.parentShip) {
-                menustack.push(new cargomenu(this.currentState.me.currentShip, false))
+                    menustack.push(new cargomenu(this.currentState.me.currentShip, false))
                 }
                 else {
                     menustack.push(new cargomenu(this.currentState.me.currentShip, true))
                 }
                 activateMenuListener()
+                // Tell the server to activate the station
+                this.socket.emit('toggleStation', true);
             }
-            
             else {
                 this.socket.emit('direction', input)
             }
@@ -186,12 +236,13 @@ export class gamemanager {
         }
     }
 
-    addPlayer(user, pair) {
-        if (pair === null) {
-            this.socket.emit('addPlayer', {u: user, s: null})
-        }
-        else {
-            this.socket.emit('addPlayer', {u: user, s: pair})
+    addPlayer(socket, user, pair) {
+        try {
+            console.log(`Emitting 'join' event for user: ${user}, pair: ${pair} using socket: ${socket.id}`);
+            socket.emit('join', { user, pair });
+            console.log('Join event emitted successfully');
+        } catch (error) {
+            console.error('Error emitting join event:', error);
         }
     }
 

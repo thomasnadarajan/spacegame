@@ -46,19 +46,74 @@ export class player {
         this.worldPosition.x = (this.position.x * ship.block) -this.width / 2  + ship.block / 2
         this.worldPosition.y = (this.position.y * ship.block) -this.height / 2 + ship.block / 2
     }
-    movePlayer(x, y, cargo_grid) {
-        // position bounds are set at 9 because the ship is 10x10 units
-        const lower_x = Math.floor(x / ship.block)
-        const lower_y = Math.floor(y / ship.block)
-        const upper_x = Math.floor((x + (this.width))/ ship.block)
-        const upper_y = Math.floor((y + (this.height))/ ship.block)
-        const left_x = Math.floor(x / ship.block)
-        const left_y = Math.floor((y + this.height)/ ship.block)
-        const right_x = Math.floor((x + this.width)/ ship.block)
-        const right_y = Math.floor(y/ ship.block)
-        if (ship.grid[lower_x][lower_y] === 1 && ship.grid[upper_x][upper_y] === 1 && ship.grid[left_x][left_y] === 1 && ship.grid[right_x][right_y] === 1 && cargo_grid[lower_x][lower_y] === 0 && cargo_grid[upper_x][upper_y] === 0 && cargo_grid[left_x][left_y] === 0 && cargo_grid[right_x][right_y] === 0) {
-            this.position = {x: lower_x, y: lower_y}
-            this.worldPosition = {x: x, y: y}
+    // New method to explicitly update worldPosition based on grid position
+    updateWorldPosition(shipBlockSize) {
+        const block = shipBlockSize || 40;
+        this.worldPosition = { 
+            x: this.position.x * block + block / 2 - this.width / 2, 
+            y: this.position.y * block + block / 2 - this.height / 2 
+        };
+        console.log(`Updated worldPosition based on grid [${this.position.x},${this.position.y}]:`, this.worldPosition);
+    }
+
+    movePlayer(targetWorldX, targetWorldY, cargo_grid, shipBlockSize) {
+        const block = shipBlockSize || 40;
+
+        // Calculate target grid coordinates
+        const targetGridX = Math.floor(targetWorldX / block);
+        const targetGridY = Math.floor(targetWorldY / block);
+        
+        // Check grid bounds (0-9)
+        if (targetGridX < 0 || targetGridX > 9 || targetGridY < 0 || targetGridY > 9) {
+            console.log('Target grid position out of bounds');
+            return false; // Cannot move
+        }
+        // Block movement if target cell is a ship wall (static grid value 0)
+        if (ship.grid[targetGridX][targetGridY] === 0) {
+            console.log(`Movement blocked by ship wall at [${targetGridX},${targetGridY}]`);
+            return false; // Wall blocking
+        }
+        // Block movement if there's cargo in the cell
+        if (cargo_grid && cargo_grid[targetGridX] && cargo_grid[targetGridX][targetGridY] === 1) {
+            console.log(`Movement blocked by cargo at [${targetGridX},${targetGridY}]`);
+            return false; // Cargo blocking
+        }
+        
+        // TEMPORARILY ASSUME PLAYER CAN ALWAYS MOVE IF NOT blocked
+        let canMove = true;
+        console.log(`Temp Check: Target Grid [${targetGridX}, ${targetGridY}], canMove = ${canMove}`);
+
+        // --- Original Cargo Check (Commented out for testing) ---
+        // if (cargo_grid) {
+        //     try {
+        //         if (cargo_grid[targetGridX][targetGridY] === 1) {
+        //             console.log(`Movement blocked by cargo at [${targetGridX}, ${targetGridY}]`);
+        //             canMove = false;
+        //         }
+        //     } catch (error) {
+        //         console.error(`Error checking cargo grid at [${targetGridX}, ${targetGridY}]:`, error);
+        //         // Decide if error blocks movement or not - let's block for safety
+        //         // canMove = false; 
+        //     }
+        // }
+        // --- End Collision Check ---
+
+        // If movement is allowed, update grid position ONLY
+        if (canMove) {
+            // Update worldPosition regardless of grid change
+            this.worldPosition = { x: targetWorldX, y: targetWorldY };
+
+            // Only update grid if it changed
+            if (this.position.x !== targetGridX || this.position.y !== targetGridY) {
+                console.log(`Player moving from grid [${this.position.x},${this.position.y}] to [${targetGridX},${targetGridY}]`);
+                this.position.x = targetGridX;
+                this.position.y = targetGridY;
+            }
+            
+            return true;
+        } else {
+            console.log('Movement blocked (Simplified Check).');
+            return false;
         }
     }
     togglePlayerView() {
@@ -70,50 +125,49 @@ export class player {
             this.health = 0
         }
     }
-    update(cargo_grid) {
-        if (this.keys.left) {
-            this.movePlayer(this.worldPosition.x - 4, this.worldPosition.y, cargo_grid)
-            if (this.direction === 1) {
-                this.animation = this.animation < 3.8 ? this.animation + 0.2 : 0
-            }
-            else {
-                this.direction = 1
-                this.animation = 0
-            }
-        }
+    update(cargo_grid, shipBlockSize) {
+        const block = shipBlockSize || 40;
+        let moved = false; // Track if player moved this update
+        let targetWorldX = this.worldPosition.x;
+        let targetWorldY = this.worldPosition.y;
 
-        else if (this.keys.right) {
-            this.movePlayer(this.worldPosition.x + 4, this.worldPosition.y, cargo_grid)
-            if (this.direction === 3) {
-                this.animation = this.animation < 3.8 ? this.animation + 0.2 : 0
+        // Only process movement if not in pilot mode
+        if (this.playerView) {
+            // Calculate target world position based on keys
+            if (this.keys.left) {
+                targetWorldX -= 4;
+                if (this.direction !== 1) { this.direction = 1; this.animation = 0; }
             }
-            else {
-                this.direction = 3
-                this.animation = 0
+            else if (this.keys.right) {
+                targetWorldX += 4;
+                if (this.direction !== 3) { this.direction = 3; this.animation = 0; }
             }
-        }
+            else if (this.keys.up) {
+                targetWorldY -= 4;
+                if (this.direction !== 0) { this.direction = 0; this.animation = 0; }
+            }
+            else if (this.keys.down) {
+                targetWorldY += 4;
+                if (this.direction !== 2) { this.direction = 2; this.animation = 0; }
+            }
 
-        else if (this.keys.up) {
-            this.movePlayer(this.worldPosition.x, this.worldPosition.y - 4, cargo_grid)
-            
-            if (this.direction === 0) {
-                this.animation = this.animation < 3.8 ? this.animation + 0.2 : 0
+            // Attempt to move to the target world position
+            // movePlayer now returns true if grid position changed, false otherwise
+            if (targetWorldX !== this.worldPosition.x || targetWorldY !== this.worldPosition.y) {
+                moved = this.movePlayer(targetWorldX, targetWorldY, cargo_grid, block);
             }
-            else {
-                this.direction = 0
-                this.animation = 0
-            }
-        }
 
-        else if (this.keys.down) {
-            this.movePlayer(this.worldPosition.x, this.worldPosition.y + 4, cargo_grid)
-            if (this.direction === 2) {
-                this.animation = this.animation < 3.8 ? this.animation + 0.2 : 0
+            // Update animation only if a move key is pressed
+            // And optionally only if the move was successful (moved == true)
+            if (this.keys.left || this.keys.right || this.keys.up || this.keys.down) {
+                this.animation = this.animation < 3.8 ? this.animation + 0.2 : 0;
             }
             else {
-                this.direction = 2
-                this.animation = 0
+                this.animation = 0; // Reset animation if no movement keys are pressed
             }
+        } else {
+            // Reset animation when in pilot mode
+            this.animation = 0;
         }
     }
 }

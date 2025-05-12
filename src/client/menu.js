@@ -399,7 +399,15 @@ export class tacticalmenu extends menu {
         this.availablePower = 0
     }
     update(data) {
-        this.availablePower = data.availablePower
+        console.log('Tactical menu update with data:', {
+            shipId: this.ship,
+            oldPower: this.availablePower,
+            newPower: data.availablePower,
+            systems: data.systems
+        });
+        
+        this.availablePower = data.availablePower !== undefined ? data.availablePower : 2;
+        
         for (const comp in this.components) {
             if (comp === 'WeaponsShifter') {
                 this.components[comp].Level = data.systems.weapons - 1
@@ -413,11 +421,13 @@ export class tacticalmenu extends menu {
         }
     }
     clicked(comp) {
+        console.log('tacticalmenu.clicked called with component:', comp)
         const component = this.components[comp]
         if (comp === 'Close') {
             return 'close'
         }
         else if (comp === 'Weapons') {
+            console.log('Weapons button clicked in tacticalmenu')
             return 'weapons'
         }
         if (component.Type === 'shifter') {

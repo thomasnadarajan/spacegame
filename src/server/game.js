@@ -4,7 +4,7 @@ import {shiplaser, playerlaser} from '../shared/laser'
 import { cargoCollide, circleCollision, playerCollide, worldCollide } from './circlecol'
 import {cargo} from '../shared/cargo'
 import { leaderboard } from '../shared/leaderboard'
-import { RedisManager } from './redisManager'
+import { MemoryStateManager } from './memoryStateManager'
 
 export class game {
     constructor() {
@@ -27,8 +27,8 @@ export class game {
         this.deleting = false
         this.timeouts = {}
         
-        // Initialize Redis manager
-        this.redisManager = new RedisManager()
+        // Initialize Memory state manager
+        this.stateManager = new MemoryStateManager()
         
         // Initialize game state properly
         this.initializeGameState().catch(err => {
@@ -40,18 +40,15 @@ export class game {
         try {
             console.log('Initializing game state...');
             
-            // Clear existing Redis state
-            await this.redisManager.clearState();
-            
-            // Load initial state from Redis (which will now be empty)
-            const state = await this.redisManager.getGameState()
+            // Clear existing state
+            await this.stateManager.clearState();
             
             // Initialize empty game state
             this.ships = {}
             this.players = {}
             this.cargo = []
             
-            console.log('Game state initialized with empty Redis cache');
+            console.log('Game state initialized with empty memory cache');
 
             // Start the game loop
             setInterval(this.update.bind(this), 1000/60)
@@ -70,7 +67,15 @@ export class game {
         clearTimeout(this.timeouts[socket])
     }
     addConnection(socket) {
-        this.sockets[socket.id] = socket
+        if (!socket || !socket.id) {
+            console.error('Cannot add connection: Invalid socket object');
+            return false;
+        }
+        
+        // Store socket with its ID as the key
+        console.log(`Adding socket connection: ${socket.id}`);
+        this.sockets[socket.id] = socket;
+        return true;
     }
     checkCollisions(newShip) {
         for (const shipId in this.ships) {
@@ -81,6 +86,12 @@ export class game {
         return false;
     }
     async addPlayer(user, socket, existingPairCode = null) {
+        // Validate socket exists and has an ID
+        if (!socket || !socket.id) {
+            console.error(`Cannot add player: Invalid socket object provided for user ${user}`);
+            return false;
+        }
+        
         console.log(`Attempting to add player: ${user} with socket ID: ${socket.id}`);
         try {
             // If joining with an existing pair code
@@ -129,7 +140,7 @@ export class game {
                         
                         console.log(`Saving player data to Redis with existing pair code`);
                         // Save to Redis
-                        await this.redisManager.addPlayer(socket.id, playerData);
+                        await this.stateManager.addPlayer(socket.id, playerData);
                         
                         // Send ready event through socket
                         try {
@@ -198,7 +209,7 @@ export class game {
                 
                 console.log(`Registering pair code: ${pair_code} with Redis`);
                 // Register the pair code with this instance
-                await this.redisManager.registerPairCode(pair_code)
+                await this.stateManager.registerPairCode(pair_code)
                 
                 // Update leaderboard with initial cargo
                 this.leaderboard.addPair(pair_code, temp.cargo || 0)
@@ -217,11 +228,20 @@ export class game {
                 
                 console.log(`Saving player data to Redis`);
                 // Save to Redis
-                await this.redisManager.addPlayer(socket.id, playerData)
+                await this.stateManager.addPlayer(socket.id, playerData)
 
                 console.log(`===== PLAYER CREATION SUCCESS =====`);
                 console.log(`Player created: ${user} with socket ID: ${socket.id}`);
-                console.log(`Player data:`, JSON.stringify(playerData, null, 2));
+                // console.log(`Player data:`, JSON.stringify(playerData, null, 2)); // Avoid stringify for complex objects
+                console.log('Player data (excluding position objects):', {
+                    username: playerData.username,
+                    health: playerData.health,
+                    currentShip: playerData.currentShip,
+                    playerView: playerData.playerView,
+                    pair: playerData.pair
+                    // Add other primitive fields if needed
+                });
+                // TODO: Inspect playerData.position and playerData.worldPosition if error persists
                 console.log(`Ready to emit 'ready' event to socket: ${socket.id}`);
                 
                 // Check socket state before emitting
@@ -256,7 +276,8 @@ export class game {
         this.ships[player.currentShip].setRotation(dir)
     }
     handleDirectionInput(player, key) {
-        this.players[player].keys[key] = true
+        const p = this.players[player]
+        p.keys[key] = true
         if (key === 'use') {
             this.usePlayer(player)
         }
@@ -266,19 +287,87 @@ export class game {
         this.players[player].animation = 0
     }
     handleFire(rotation, ship) {
-        const parentShip = this.ships[ship]
-        const rot = rotation + parentShip.rotation
-        const originx = parentShip.position.x 
-        const originy = parentShip.position.y - 10 * parentShip.shipblock
-        const x = Math.cos(rot) * (originx - parentShip.position.x) - Math.sin(rot) * (originy - parentShip.position.y) + parentShip.position.x;
-        const y = Math.sin(rot) * (originx - parentShip.position.x) + Math.cos(rot) * (originy - parentShip.position.y) + parentShip.position.y;
-        this.shiplasers.push(new shiplaser(x, y, rot, parentShip))
+        console.log(`Handling fire request: rotation=${rotation}, ship=${ship}`);
+        
+        // Check if the ship exists
+        if (!this.ships[ship]) {
+            console.error(`Cannot fire: Ship ${ship} not found`);
+            return;
+        }
+        
+        const parentShip = this.ships[ship];
+        
+        // Calculate the exact position and rotation for the laser
+        const rot = rotation + parentShip.rotation;
+        
+        // Calculate the offset from the ship's center based on ship size
+        const shipSize = 10 * parentShip.shipblock;
+        
+        // Calculate the weapon position at the front of the ship in the direction of aim
+        // Using sin for X and -cos for Y to match the game's coordinate system
+        const offsetX = Math.sin(rot) * shipSize;
+        const offsetY = -Math.cos(rot) * shipSize;
+        
+        // Set the laser's initial position at the edge of the ship
+        const x = parentShip.position.x + offsetX;
+        const y = parentShip.position.y + offsetY;
+        
+        // Create and add the laser
+        const newLaser = new shiplaser(x, y, rot, parentShip);
+        this.shiplasers.push(newLaser);
+        
+        console.log(`Laser created at position (${x}, ${y}) with rotation ${rot}, total lasers: ${this.shiplasers.length}`);
+        
+        // Force an immediate update
+        this.shouldSendUpdate = true;
     }
     handlePowerUpdate(system, level, ship) {
-        const s = system.replace('Shifter', '').toLowerCase()
-        const used = (level+1) - this.ships[ship].systems[s]
-        this.ships[ship].systems[s] = level + 1
-        this.ships[ship].availablePower -= used
+        console.log(`Processing power update: system=${system}, level=${level}, ship=${ship}`);
+        
+        // If the ship doesn't exist in this.ships, log and return
+        if (!this.ships[ship]) {
+            console.error(`Ship ${ship} not found for power update`);
+            return;
+        }
+        
+        // Extract the system name from the shifter name (e.g., WeaponsShifter -> weapons)
+        const systemName = system.replace('Shifter', '').toLowerCase();
+        
+        // Check if the system exists on the ship
+        if (!this.ships[ship].systems || !this.ships[ship].systems.hasOwnProperty(systemName)) {
+            console.error(`System ${systemName} not found on ship ${ship}`);
+            return;
+        }
+        
+        // Calculate power usage
+        const currentLevel = this.ships[ship].systems[systemName] || 1;
+        const newLevel = level + 1; // Level is 0-indexed from the UI, but 1-indexed in the model
+        const powerDelta = newLevel - currentLevel;
+        
+        console.log(`Power update calculation: current=${currentLevel}, new=${newLevel}, delta=${powerDelta}`);
+        
+        // Check if ship has enough available power
+        if (this.ships[ship].availablePower === undefined) {
+            console.log(`Ship ${ship} has undefined availablePower, setting to default (2)`);
+            this.ships[ship].availablePower = 2; // Default value if not set
+        }
+        
+        console.log(`Before update: availablePower=${this.ships[ship].availablePower}`);
+        
+        // Check if the update is valid
+        if (powerDelta > this.ships[ship].availablePower) {
+            console.error(`Not enough power available: needed=${powerDelta}, available=${this.ships[ship].availablePower}`);
+            return;
+        }
+        
+        // Apply the update
+        this.ships[ship].systems[systemName] = newLevel;
+        this.ships[ship].availablePower -= powerDelta;
+        
+        console.log(`Power update applied: ${systemName}=${newLevel}, availablePower=${this.ships[ship].availablePower}`);
+        
+        // Force an update to be sent
+        this.shouldSendUpdate = true;
     }
     handlePlayerDirection(player, data) {
         this.players[player].weaponsDirection = data
@@ -296,16 +385,55 @@ export class game {
         }
     }
     handlePlayerFire(player) {
-        const p = this.players[player]
-        const s = this.ships[p.currentShip]
-        const rot = p.weaponsDirection
-        const originx = p.worldPosition.x + p.width / 2 
-        const originy = p.worldPosition.y + p.height / 2 - 30
-        const rotx = p.worldPosition.x+ p.width / 2
-        const roty = p.worldPosition.y + p.height / 2
-        const x = Math.cos(rot) * (originx - rotx) - Math.sin(rot) * (originy - roty) +rotx;
-        const y = Math.sin(rot) * (originx - rotx) + Math.cos(rot) * (originy - roty) + roty;
-        this.playerlasers.push(new playerlaser(x, y, rot, p, s))
+        try {
+            console.log(`Creating player laser for player ${player}`);
+            
+            // Verify the player exists
+            if (!this.players[player]) {
+                console.error(`Player ${player} not found for firing`);
+                return;
+            }
+            
+            const p = this.players[player];
+            
+            // Verify the player's ship exists
+            if (!p.currentShip || !this.ships[p.currentShip]) {
+                console.error(`Ship ${p.currentShip} not found for player ${player}`);
+                return;
+            }
+            
+            const s = this.ships[p.currentShip];
+            
+            
+            
+            
+            // Debug the player's world position
+            console.log(`PLAYER DATA:`, {
+                position: p.position,
+                worldPosition: p.worldPosition,
+                width: p.width,
+                height: p.height,
+                weaponsDirection: p.weaponsDirection
+            });
+            
+            // Compute player's true world position for spawning
+            const localX = -(5 * s.shipblock) + p.worldPosition.x + (p.width / 2);
+            const localY = -(5 * s.shipblock) + p.worldPosition.y + (p.height / 2);
+            const laserX = s.position.x + localX;
+            const laserY = s.position.y + localY;
+            // Combine weapon and ship rotation for firing direction
+            const spawnRot = p.weaponsDirection + s.rotation;
+            console.log('PLAYER LASER SPAWN AT TRUE POS:', { x: laserX, y: laserY, rotation: spawnRot });
+            const newLaser = new playerlaser(laserX, laserY, spawnRot, p, s);
+            
+            // Add the laser
+            this.playerlasers.push(newLaser);
+            
+            // Force an immediate update
+            this.shouldSendUpdate = true;
+        } catch (error) {
+            console.error('Error in handlePlayerFire:', error);
+        }
     }
     checkShipDestroy() {
         let marked_pairs= []
@@ -332,49 +460,10 @@ export class game {
         }
     }
     async update(){
-        if (this.shouldSendUpdate) {
+            
             for (const laser of this.shiplasers) {
-                if (laser.x < 0 || laser.x > 50000 || laser.y < 0 || laser.y > 50000) {
-                    laser.setDestroyed()
-                }
-            }
-            this.shiplasers = this.shiplasers.filter(laser => !laser.destroyed)
-            this.playerlasers = this.playerlasers.filter(laser => !laser.destroyed)
-            this.checkShipDestroy()
-            var markedPlayers = []
-            for (const player in this.players) {
-                // Validate that the player's ship exists
-                const currentPlayer = this.players[player];
-                const currentShip = this.ships[currentPlayer.currentShip];
-                
-                if (!currentShip) {
-                    console.error(`Ship ${currentPlayer.currentShip} not found for player ${player}, removing player`);
-                    delete this.players[player];
-                    if (this.sockets[player]) {
-                        this.sockets[player].emit('dead');
-                    }
-                    continue;
-                }
-
-                if (currentPlayer.health === 0) {
-                    currentShip.removePlayer(player);
-                    markedPlayers.push(player);
-                } else {
-                    currentPlayer.health = Math.min(currentPlayer.health + 1, currentPlayer.health);
-                    // Only update player if their ship exists and has a cargomap
-                    if (currentShip && currentShip.cargomap) {
-                        currentPlayer.update(currentShip.cargomap);
-                    }
-                }
-            }
-            for (const laser of this.shiplasers) {
-                laser.update()
-            }
-            for (const laser of this.playerlasers) {
-                laser.update()
-            }
-            for (const ship in this.ships) {
-                for (const laser of this.shiplasers) {
+                laser.update();
+                for (const ship in this.ships) {
                     if (laser.ship !== this.ships[ship].id) {
                         if (circleCollision(this.ships[ship], null, laser)) {
                             this.ships[ship].hit(laser)
@@ -382,90 +471,179 @@ export class game {
                         }
                     }
                 }
-                for (const cargo of this.cargo) {
-                    if (cargoCollide(this.ships[ship], cargo)) {
-                        this.ships[ship].cargo += cargo.cargo
-                        this.cargo.splice(this.cargo.indexOf(cargo), 1)
-                    }
-                }
             }
+            
             for (const laser of this.playerlasers) {
+                // Log before update
+                const beforeX = laser.x;
+                const beforeY = laser.y;
+                
+                // Update position
+                laser.update();
+                
+                // Log movement
+                const deltaX = laser.x - beforeX;
+                const deltaY = laser.y - beforeY;
+                console.log(`Player laser moved: (${beforeX}, ${beforeY}) → (${laser.x}, ${laser.y}), delta: (${deltaX}, ${deltaY})`);
+                
+                // If the laser is out of bounds, mark it as destroyed
+                if (laser.x < 0 || laser.x > 50000 || laser.y < 0 || laser.y > 50000) {
+                    laser.destroyed = true;
+                    continue;
+                }
+                
+                // Check player collision with the laser
                 for (const player in this.players) {
+                    // Skip collision check if laser is already marked destroyed
+                    if (laser.destroyed) continue;
+                    
                     if (laser.ship === this.players[player].currentShip) {
                         if (playerCollide(this.players[player], null, laser)) {
-                            this.players[player].hit()
-                            laser.setDestroyed()
+                            console.log(`Player laser HIT player ${player}`);
+                            this.players[player].hit();
+                            laser.setDestroyed();
                         }
                     }
                 }
-                var worldCol = false
-                for (let x = 0; x < 10; x++) {
-                    for (let y = 0; y < 10; y++) {
-                        if (ship.grid[x][y] === 0) {
-                            const blockPosition = {x: x * ship.block, y: y * ship.block, width: ship.block, height: ship.block}
-                            if (worldCollide(laser, blockPosition)) {
-                                laser.setDestroyed()
-                                worldCol = true
+                
+                // Check ship wall collision for laser
+                // Get the ship associated with this laser for proper collision detection
+                const shipId = typeof laser.ship === 'object' ? laser.ship.id : laser.ship;
+                
+                
+                // If the laser isn't destroyed yet, also check for collisions with ship walls
+                if (!laser.destroyed) {
+                    const shipInstance = this.ships[shipId];
+                    if (shipInstance) {
+                        console.log('Checking laser collide')
+                        const blockSize = shipInstance.shipblock;
+                        const leftMostX = shipInstance.position.x - 5 * blockSize;
+                        const leftMostY = shipInstance.position.y - 5 * blockSize;
+                        // Iterate through all wall tiles (grid value 0)
+                        outer: for (let gx = 0; gx < ship.grid.length; gx++) {
+                            for (let gy = 0; gy < ship.grid[0].length; gy++) {
+                                if (ship.grid[gx][gy] === 0) {
+                                    const blockPos = {
+                                        x: leftMostX + gx * blockSize,
+                                        y: leftMostY + gy * blockSize,
+                                        width: blockSize,
+                                        height: blockSize
+                                    };
+                                    if (worldCollide(laser, blockPos)) {
+                                        console.log(`Player laser collided with wall tile at [${gx},${gy}] on ship ${shipId}`);
+                                        laser.setDestroyed();
+                                        break outer;
+                                    }
+                                }
                             }
                         }
                     }
-                    if (worldCol) {
-                        break
-                    }
                 }
-            }
-            if (this.cargo.length < 10) {
-                this.cargoGenerator()
-            }
-            var markedTransports = []
-            for (const transport in this.cargoRequests) {
-                if (this.cargoRequests[transport].time % 240 === 0 && this.cargoRequests[transport].time !== 0) {
-                    if (this.ships[transport].cargo > 0) {
-                        this.ships[this.cargoRequests[transport].sink].cargo += 1
-                        this.ships[transport].cargo -= 1
-                    }
-                    if (this.ships[transport].cargo === 0) {
-                        markedTransports.push(transport)
-                    }
-
-                }
-                this.cargoRequests[transport].time += 1
-            }
-            for (const transport of markedTransports) {
-                delete this.cargoRequests[transport]
             }
             
-            for (const ship in this.ships) {
-                const f = circleCollision
-                this.ships[ship].update(this.ships,f)
-            }
-            for (const player in this.players) {
-                this.players[player].update(this.ships[this.players[player].currentShip].cargomap)
-            }
-            Object.keys(this.sockets).forEach(playerID => {
-                const socket = this.sockets[playerID];
-                if (playerID in this.players && this.ships[this.players[playerID].currentShip]) {
-                    const player = this.players[playerID];
-                    socket.emit('update', this.generateGameUpdate(player));
-                } else {
-                    socket.emit('update', this.generateGameUpdate(null));
-                }
-            })
-            this.shouldSendUpdate = false;
-            
-            // Sync leaderboard to Redis
-            await this.redisManager.updateLeaderboard(this.leaderboard)
+        
 
-            // Sync complete game state to Redis periodically (every 5 seconds)
-            if (Date.now() - this.lastUpdate > 5000) {
-                await this.syncGameState()
-                this.lastUpdate = Date.now()
+        this.shiplasers = this.shiplasers.filter(laser => !laser.destroyed);
+        this.playerlasers = this.playerlasers.filter(laser => !laser.destroyed);
+        
+                
+        this.checkShipDestroy()
+        var markedPlayers = []
+        for (const player in this.players) {
+            // Validate that the player's ship exists
+            const currentPlayer = this.players[player];
+            const currentShip = this.ships[currentPlayer.currentShip];
+            
+            if (!currentShip) {
+                console.error(`Ship ${currentPlayer.currentShip} not found for player ${player}, removing player`);
+                delete this.players[player];
+                if (this.sockets[player]) {
+                    this.sockets[player].emit('dead');
+                }
+                continue;
             }
-        } else {
-            this.shouldSendUpdate = true;
+
+            if (currentPlayer.health === 0) {
+                currentShip.removePlayer(player);
+                markedPlayers.push(player);
+            } else {
+                currentPlayer.health = Math.min(currentPlayer.health + 1, currentPlayer.health);
+                // Only update player if their ship exists and has a cargomap
+                if (currentShip && currentShip.cargomap) {
+                    currentPlayer.update(currentShip.cargomap, currentShip.shipblock);
+                }
+            }
+        }
+        for (const ship in this.ships) {
+            for (const cargo of this.cargo) {
+                if (cargoCollide(this.ships[ship], cargo)) {
+                    this.ships[ship].cargo += cargo.cargo
+                    this.cargo.splice(this.cargo.indexOf(cargo), 1)
+                }
+            }
+        }
+        if (this.cargo.length < 10) {
+            this.cargoGenerator()
+        }
+        var markedTransports = []
+        for (const transport in this.cargoRequests) {
+            if (this.cargoRequests[transport].time % 240 === 0 && this.cargoRequests[transport].time !== 0) {
+                if (this.ships[transport].cargo > 0) {
+                    this.ships[this.cargoRequests[transport].sink].cargo += 1
+                    this.ships[transport].cargo -= 1
+                }
+                if (this.ships[transport].cargo === 0) {
+                    markedTransports.push(transport)
+                }
+
+            }
+            this.cargoRequests[transport].time += 1
+        }
+        for (const transport of markedTransports) {
+            delete this.cargoRequests[transport]
+        }
+        
+        for (const ship in this.ships) {
+            const f = circleCollision
+            this.ships[ship].update(this.ships,f)
+        }
+        for (const player in this.players) {
+            const p = this.players[player];
+            const ship = this.ships[p.currentShip]; // Get the current ship
+            
+            // Ensure ship exists and has cargomap and shipblock
+            if (ship && ship.cargomap && ship.shipblock) {
+                p.update(ship.cargomap, ship.shipblock); // Pass shipblock size
+            } else {
+                // Handle cases where ship data is missing or incomplete
+                console.warn(`Skipping player update for ${player}: Missing ship data`);
+                // Optionally, call update without cargomap/block if needed
+                // p.update(null, null); 
+            }
+        }
+        Object.keys(this.sockets).forEach(playerID => {
+            const socket = this.sockets[playerID];
+            if (playerID in this.players && this.ships[this.players[playerID].currentShip]) {
+                const player = this.players[playerID];
+                socket.emit('update', this.generateGameUpdate(player));
+            } else {
+                socket.emit('update', this.generateGameUpdate(null));
+            }
+        })
+        this.shouldSendUpdate = false;
+        
+        // Sync leaderboard to memory
+        await this.stateManager.updateLeaderboard(this.leaderboard)
+
+        // Sync complete game state to memory periodically (every 5 seconds)
+        if (Date.now() - this.lastUpdate > 5000) {
+            await this.syncGameState()
+            this.lastUpdate = Date.now()
         }
     }
-    generateGameUpdate(me) {
+    generateGameUpdate(mePlayerInstance) {
+        // Debug: log the mePlayerInstance to understand its structure
+            
         var lead = this.leaderboard
         if (!this.deleting) {
             lead = new leaderboard()
@@ -474,7 +652,6 @@ export class game {
             // Collect all ships and their cargo levels
             for (const shipId in this.ships) {
                 const ship = this.ships[shipId];
-                // Find if this ship belongs to a pair
                 let pairId = null;
                 for (const pair in this.pairs) {
                     if (this.pairs[pair].ship === parseInt(shipId)) {
@@ -482,8 +659,6 @@ export class game {
                         break;
                     }
                 }
-                
-                // If ship belongs to a pair, add its score
                 if (pairId !== null) {
                     pairscores.push({
                         pair: pairId,
@@ -491,28 +666,153 @@ export class game {
                     });
                 }
             }
-            
-            // Sort by score in descending order
             pairscores.sort((a, b) => b.score - a.score)
-            
-            // Add top 5 scores to leaderboard
             for (let i = 0; i < pairscores.length && i < 5; i++) {
                 lead.addPair(pairscores[i].pair, pairscores[i].score)
             }
-            
             this.leaderboard = lead
         }
         
-        const update = {
-            me: me,
-            players: this.players,
-            ships: this.ships,
-            shiplasers: this.shiplasers,
-            playerlasers: this.playerlasers,
-            cargo: this.cargo,
-            leaderboard: lead,
-            pairs: this.pairs // Add pairs to the update so client knows about pair assignments
+        // --- Create simplified, serializable data --- 
+
+        const simplifiedPlayers = {};
+        for (const id in this.players) {
+            const p = this.players[id];
+            if (!p) continue; // Skip if player object is missing
+            simplifiedPlayers[id] = {
+                id: id,
+                user: p.user,
+                position: p.position, 
+                worldPosition: p.worldPosition,
+                health: p.health,
+                currentShip: p.currentShip, // Send ship ID
+                playerView: p.playerView,
+                pair: p.pair,
+                keys: p.keys || {}, // Ensure keys exist
+                direction: p.direction || 0, // Default direction
+                width: p.width || 32, // Player width
+                height: p.height || 48, // Player height
+                weaponsDirection: p.weaponsDirection || 0, // Weapon direction
+                animation: p.animation || 0
+                // Add other necessary primitive properties from player class
+            };
         }
+    
+        // Create simplified ship objects
+        const simplifiedShips = {};
+        for (const [shipId, ship] of Object.entries(this.ships)) {
+            if (!ship) continue;  // Skip if ship is null or undefined
+            
+            // Only include necessary ship data to avoid circular references
+            simplifiedShips[shipId] = {
+                id: shipId,
+                name: ship.name || `Ship ${shipId}`,
+                position: JSON.parse(JSON.stringify(ship.position || { x: 0, y: 0 })),
+                rotation: ship.rotation || 0,
+                velocity: JSON.parse(JSON.stringify(ship.velocity || { x: 0, y: 0 })),
+                health: ship.health || 100,
+                maxHealth: ship.maxHealth || 100,
+                shield: ship.shield || 0,
+                maxShield: ship.maxShield || 50,
+                hull: ship.hull || 100,  // Add hull property
+                mass: ship.mass || 1000,
+                radius: ship.radius || 50,
+                type: ship.type || 'default',
+                availablePower: ship.availablePower !== undefined ? ship.availablePower : 2,
+                systems: ship.systems ? JSON.parse(JSON.stringify(ship.systems)) : {
+                    weapons: 1,
+                    shields: 1,
+                    engines: 1
+                },
+                cargo: ship.cargo || 0,  // Add cargo property
+                players: ship.players || [],  // Add players array
+                shipblock: ship.shipblock || 40,  // Add shipblock property
+                moving: ship.moving || false,  // Add moving property
+                cargomap: ship.cargomap || Array(10).fill().map(() => Array(10).fill(0))  // Add cargomap
+            };
+        }
+    
+        // Assuming laser and cargo classes are simple data objects or have a toJSON/toPlainObject method
+        const simplifiedShipLasers = this.shiplasers.map(l => ({
+            x: l.x,
+            y: l.y,
+            rotation: l.rotation,
+            totalrotation: l.totalrotation, 
+            destroyed: l.destroyed,
+            shipId: l.ship, // Assuming base class stores ship ID correctly
+            radius: l.radius,
+            power: l.power, // Specific to shiplaser
+            position: l.position || { x: l.x, y: l.y }
+        }));
+        
+        // Enhance player lasers data for better client-side rendering
+        const simplifiedPlayerLasers = this.playerlasers.map(l => {
+            
+            return {
+                x: l.x,
+                y: l.y,
+                rotation: l.rotation,
+                totalrotation: l.totalrotation, 
+                destroyed: l.destroyed,
+                ship: typeof l.ship === 'object' ? l.ship.id : l.ship, // Ensure ship is always an ID
+                player: typeof l.player === 'object' 
+                    ? (l.player.id || (typeof l.player === 'string' ? l.player : null)) 
+                    : l.player, // Handle player reference correctly
+                radius: l.radius || 5, // Default radius if missing
+                position: l.position || { x: l.x, y: l.y } // Ensure position exists
+            };
+        });
+
+        const simplifiedCargo = this.cargo.map(c => c); // Adjust if cargo are complex classes
+
+        // Find the simplified data for the 'me' player
+        let meSimplified = null;
+        
+        // If we have a player instance, find it in our simplified players
+        if (mePlayerInstance) {
+            // Try to find player by direct reference (checking if it's one of our players)
+            const socketId = Object.keys(this.players).find(key => this.players[key] === mePlayerInstance);
+            
+            if (socketId) {
+                // We found the player by reference, use its socket ID to get the simplified version
+                meSimplified = simplifiedPlayers[socketId];
+            } 
+            else if (mePlayerInstance.id) {
+                // If it has an ID, try to find it directly
+                meSimplified = simplifiedPlayers[mePlayerInstance.id];
+            }
+            
+            // If we still can't find it, log detailed info
+            if (!meSimplified) {
+                console.warn(`Could not find simplified data for 'me' player`, {
+                    playerHasId: !!mePlayerInstance.id,
+                    playerId: mePlayerInstance.id,
+                    socketIdFound: !!socketId,
+                    availablePlayerIds: Object.keys(simplifiedPlayers).join(', ')
+                });
+            }
+        }
+
+        // --- TEMPORARY DEBUGGING: Send ONLY 'me' --- 
+        const update = {
+            me: meSimplified || { 
+                position: { x: 0, y: 0 },
+                worldPosition: { x: 0, y: 0 },
+                health: 100,
+                currentShip: null,
+                playerView: true,
+                pair: null,
+                keys: {}
+            }, // Provide default object instead of null
+            players: simplifiedPlayers, // Re-enable players
+            ships: simplifiedShips, // Re-enable ships
+            shiplasers: simplifiedShipLasers, // Re-enable shiplasers
+            playerlasers: simplifiedPlayerLasers, // Re-enable playerlasers
+            cargo: simplifiedCargo, // Re-enable cargo
+            leaderboard: lead.toJSON(), // Use toJSON() to get the correct structure
+            pairs: this.pairs // Re-enable pairs
+        }
+        // console.log('Generated update:', JSON.stringify(update, null, 2)); // Careful: might be huge
         return update
     }
 
@@ -537,7 +837,7 @@ export class game {
         
         // Update Redis with new position
         if (p && p.position) {
-            await this.redisManager.updatePlayerPosition(player, {
+            await this.stateManager.updatePlayerPosition(player, {
                 x: p.position.x,
                 y: p.position.y,
                 rotation: p.direction || 0
@@ -573,7 +873,7 @@ export class game {
     async disconnect(socket, hard = true) {
         // Remove from Redis first
         if (this.players[socket.id]) {
-            await this.redisManager.removePlayer(socket.id)
+            await this.stateManager.removePlayer(socket.id)
             
             // Get the player's pair code
             const playerPairCode = this.players[socket.id].pair;
@@ -582,7 +882,7 @@ export class game {
             if (playerPairCode && this.pairs[playerPairCode]) {
                 const pair = this.pairs[playerPairCode];
                 if (pair.players.length <= 1) {
-                    await this.redisManager.removePairCode(playerPairCode);
+                    await this.stateManager.removePairCode(playerPairCode);
                 }
             }
         }
@@ -617,48 +917,111 @@ export class game {
 
     async syncGameState() {
         try {
-            // Prepare data for Redis storage
+            console.log('Preparing game state for memory sync');
+            
+            // Add minimal debug info about what we're about to sync
+            console.log(`Syncing: ${Object.keys(this.players).length} players, ${Object.keys(this.ships).length} ships, ${this.cargo.length} cargo items`);
+            
+            // Create a clean clone of the game state without socket references
+            // rather than modifying the original object
             const gameState = {
-                players: Object.entries(this.players).reduce((acc, [id, playerInstance]) => {
-                    acc[id] = {
+                players: {},
+                ships: {}, 
+                cargo: [],
+                leaderboard: [],
+                pairs: {},
+                cargoRequests: {}
+            };
+            
+            // Sanitize players
+            for (const [id, playerInstance] of Object.entries(this.players)) {
+                if (playerInstance) {
+                    gameState.players[id] = {
                         id: id,
                         username: playerInstance.user,
-                        position: playerInstance.position,
+                        position: playerInstance.position ? { ...playerInstance.position } : null,
                         health: playerInstance.health,
                         currentShip: playerInstance.currentShip,
                         playerView: playerInstance.playerView,
                         pair: playerInstance.pair,
-                        keys: playerInstance.keys || {},
-                        worldPosition: playerInstance.worldPosition
-                    }
-                    return acc
-                }, {}),
-                ships: Object.entries(this.ships).reduce((acc, [id, shipInstance]) => {
-                    acc[id] = {
-                        id: parseInt(id),
-                        position: shipInstance.position,
-                        rotation: shipInstance.rotation,
-                        hull: shipInstance.hull,
-                        cargo: shipInstance.cargo,
-                        players: shipInstance.players,
-                        systems: shipInstance.systems,
-                        moving: shipInstance.moving,
-                        shipblock: shipInstance.shipblock
-                    }
-                    return acc
-                }, {}),
-                cargo: this.cargo.map(cargoInstance => ({
-                    x: cargoInstance.x,
-                    y: cargoInstance.y,
-                    cargo: cargoInstance.cargo
-                })),
-                leaderboard: this.leaderboard
+                        keys: playerInstance.keys ? { ...playerInstance.keys } : {},
+                        worldPosition: playerInstance.worldPosition ? { ...playerInstance.worldPosition } : null
+                    };
+                }
             }
-
-            // Sync to Redis
-            await this.redisManager.updateGameState(gameState)
-        } catch (err) {
-            console.error('Failed to sync game state:', err)
+            
+            // Sanitize ships
+            for (const [id, shipInstance] of Object.entries(this.ships)) {
+                if (shipInstance) {
+                    gameState.ships[id] = {
+                        id: id,
+                        position: shipInstance.position ? { ...shipInstance.position } : null,
+                        dir: shipInstance.dir,
+                        speed: shipInstance.speed,
+                        powerState: shipInstance.powerState ? { ...shipInstance.powerState } : null,
+                        health: shipInstance.health,
+                        owner: shipInstance.owner,
+                        // Include any other relevant ship state
+                    };
+                }
+            }
+            
+            // Add cargo
+            gameState.cargo = this.cargo.map(c => ({
+                id: c.id,
+                position: c.position ? { ...c.position } : null,
+                type: c.type,
+                // Include any other relevant cargo state
+            }));
+            
+            // Add leaderboard
+            gameState.leaderboard = this.leaderboard;
+            
+            // Add pairs
+            gameState.pairs = { ...this.pairs };
+            
+            // Sanitize cargoRequests
+            for (const [sourceId, requestData] of Object.entries(this.cargoRequests)) {
+                if (requestData) {
+                    gameState.cargoRequests[sourceId] = {
+                        sink: requestData.sink,
+                        time: requestData.time
+                    };
+                }
+            }
+            
+            // Debug: test stringify locally first to catch and identify circular references
+            try {
+                // First try stringify the game state directly in this function
+                const jsonStr = JSON.stringify(gameState);
+                console.log(`Successfully stringified game state (${jsonStr.length} characters)`);
+                
+                // If we got here, update to memory
+                await this.stateManager.updateGameState(gameState);
+            } catch (jsonError) {
+                console.error('Circular reference detected in game state:', jsonError.message);
+                
+                // Try to identify which part of the state has the circular reference
+                console.log('Attempting to identify problematic part of state...');
+                
+                const parts = [
+                    'players', 'ships', 'cargo', 'leaderboard', 'pairs', 'cargoRequests'
+                ];
+                
+                for (const part of parts) {
+                    try {
+                        JSON.stringify(gameState[part]);
+                        console.log(`Part ${part} is OK`);
+                    } catch (partError) {
+                        console.error(`Circular reference found in ${part}:`, partError.message);
+                    }
+                }
+                
+                // Don't try to update if we have a circular reference
+                console.error('Skipping state sync due to circular reference');
+            }
+        } catch (error) {
+            console.error('Error syncing game state:', error);
         }
     }
 }   

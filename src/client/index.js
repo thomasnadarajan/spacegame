@@ -5,7 +5,8 @@ import { gamestate } from "./gamestate"
 import { disablePlayerListener, requestUserDetails, activatePlayerListener } from "./input" 
 
 // Get server URL from configuration or environment
-const SERVER_URL = window.GAME_SERVER_URL || window.location.origin;
+const FORCE_LOCAL = true; // Force local development server
+const SERVER_URL = FORCE_LOCAL ? 'http://localhost:8081' : (window.GAME_SERVER_URL || window.location.origin);
 console.log("Connecting to game server at:", SERVER_URL);
 
 // Enable debug mode if configured
@@ -13,22 +14,49 @@ if (window.DEBUG) {
     localStorage.debug = '*';
 }
 
+// Enable Socket.IO debug
+if (window.DEBUG) {
+    localStorage.debug = 'socket.io-client:*';
+}
+
 // Get Socket.IO options from configuration
-const options = window.SOCKET_OPTIONS || {
+const options = FORCE_LOCAL ? {
+    transports: ['polling', 'websocket'],
+    forceNew: true,
+    path: '/socket.io/',
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+    timeout: 20000
+} : (window.SOCKET_OPTIONS || {
     transports: ['polling'],
     upgrade: false,
     forceNew: true,
     path: '/socket.io/',
     withCredentials: false
-};
+});
 
 console.log(`Connecting to ${SERVER_URL} with options:`, options);
-const socket = io(SERVER_URL, options);
+let socket = io(SERVER_URL, options);
 
 // Set up event listeners
 socket.on('connect', () => {
-    console.log('Connected successfully!');
+    console.log('==== SOCKET CONNECTED SUCCESSFULLY ====');
+    console.log('Socket ID:', socket.id);
+    console.log('Socket connected:', socket.connected);
+    console.log('Transport:', socket.io.engine.transport.name);
     document.getElementById('error').classList.add("hidden");
+    
+    // Test event emission immediately on connect
+    try {
+        console.log('Emitting test ping event...');
+        socket.emit('ping', () => {
+            console.log('Received pong from server');
+        });
+    } catch (error) {
+        console.error('Error emitting test event:', error);
+    }
+    
     initializeSocket(socket);
 });
 
@@ -146,18 +174,33 @@ export let stars = [];
 
 // Initialize the game
 function initializeGame() {
+    console.log('Initializing game...');
     if (!game && socket) {
+        console.log('Creating new game manager with socket:', socket.id);
         game = new gamemanager(socket);
         // Make game available globally
         window.game = game;
+        console.log('Game initialized successfully');
+    } else {
+        console.log('Game already initialized or socket not available');
     }
 }
 
 // Add export for game
 export { game };
+export { socket };
 
 // Initialize the game when the socket is ready
-initializeGame();
+socket.on('connect', () => {
+    console.log('==== SOCKET CONNECTED SUCCESSFULLY ====');
+    console.log('Socket ID:', socket.id);
+    console.log('Socket connected:', socket.connected);
+    console.log('Transport:', socket.io.engine.transport.name);
+    document.getElementById('error').classList.add("hidden");
+    
+    // Initialize game after socket connection
+    initializeGame();
+});
 
 const disconnect = () => {
     socket.emit('disconnect')
@@ -223,3 +266,54 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// Add missing restore function
+function restore() {
+    console.log('Restoring game state after disconnect/timeout');
+    
+    // Hide game elements
+    const gameElement = document.getElementById('game');
+    const leaderboardElement = document.getElementById('leaderboard');
+    if (gameElement) gameElement.classList.add('hidden');
+    if (leaderboardElement) leaderboardElement.classList.add('hidden');
+    
+    // Show menu
+    const playMenu = document.getElementById('play-menu');
+    if (playMenu) playMenu.classList.remove('hidden');
+    
+    // Reset error message
+    const errorElement = document.getElementById('error');
+    if (errorElement) {
+        errorElement.classList.remove('hidden');
+        errorElement.innerHTML = "You were disconnected. Please try again.";
+    }
+    
+    // Cancel any game animations
+    if (game) {
+        game.cancelAnimationFrame();
+    }
+}
+
+// Set up a global test function to check socket status
+window.checkSocketConnection = function() {
+  if (!socket) {
+    console.error('Socket not initialized');
+    return false;
+  }
+  
+  console.log('Socket connection status:');
+  console.log('- Socket ID:', socket.id);
+  console.log('- Connected:', socket.connected);
+  console.log('- Disconnected:', socket.disconnected);
+  console.log('- Server URL:', SERVER_URL);
+  
+  // Test ping if connected
+  if (socket.connected) {
+    socket.emit('ping', function() {
+      console.log('Ping successful - received server response');
+    });
+    console.log('Ping sent to server');
+  }
+  
+  return socket.connected;
+};

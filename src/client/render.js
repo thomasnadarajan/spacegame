@@ -3,6 +3,7 @@ import ship_map from './assets/tilemap-editor.json'
 import {stars} from './index'
 import {ship_colors, ship} from '../shared/ship'
 import { distanceCalc, distanceCalcCargo, posDistanceCalc } from '../shared/distance';
+
 const blinkies = {}
 CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
     if (w < 2 * r) r = w / 2;
@@ -233,7 +234,8 @@ function renderTacticalMenu(menu) {
             c.font = menu.shifterFontSize.concat("px Antonio")
             c.textAlign = menu.components[comp].Alignment
             if (comp === 'Available Power: ') {
-                c.fillText(comp.concat(menu.availablePower.toString()), menu.components[comp].LeftBound, menu.components[comp].BotBound)
+                const powerValue = menu.availablePower !== undefined ? menu.availablePower.toString() : '0';
+                c.fillText(comp.concat(powerValue), menu.components[comp].LeftBound, menu.components[comp].BotBound);
             }
             else {
                 c.fillText(comp, menu.components[comp].LeftBound, menu.components[comp].BotBound)
@@ -252,7 +254,21 @@ function menuRender(menu, data) {
         renderCargoMenu(menu)
     }
     else if (menu.heading === 'Tactical') {
-        menu.update(data.ships[data.me.currentShip])
+        // Make sure ship data has the required properties
+        const shipData = data.ships[data.me.currentShip] || {};
+        
+        // Add default properties if missing
+        const safeShipData = {
+            availablePower: 2,
+            systems: {
+                weapons: 1,
+                shields: 1,
+                engines: 1
+            },
+            ...shipData  // This will overwrite defaults with actual values if they exist
+        };
+        
+        menu.update(safeShipData)
         renderTacticalMenu(menu)
     }
     c.fillStyle = 'black'
@@ -306,20 +322,40 @@ function drawPlayerName(player, playerShip) {
     c.fillText(player.user, x, y)
 }
 function drawPlayerLaser(l, ship) {
-    c.save()
-    const canvasX = canvas.width / 2 - (5 * ship.shipblock) + l.x
-    const canvasY = canvas.height / 2- (5 * ship.shipblock) + l.y
-    c.translate(canvasX, canvasY)
-    c.rotate(laser.totalrotation)
-    c.beginPath()
-    c.fillStyle = '#d63031'
-    c.strokeStyle = 'white'
-    c.lineWidth = 1/4 * l.radius
-    c.arc(0,0,l.radius * 3/4,0, 2* Math.PI)
-    c.fill()
-    c.stroke()
-    c.closePath()
-    c.restore()
+    try {
+        if (l.x === undefined || l.y === undefined || ship.position === undefined) {
+            console.error('Laser or Ship missing coordinates', { laser: l, ship });
+            return;
+        }
+
+        // Calculate laser position relative to ship center, then rotate by ship rotation
+        const relX = l.x - ship.position.x;
+        const relY = l.y - ship.position.y;
+        const angle = ship.rotation;
+        const rotatedX = relX * Math.cos(angle) - relY * Math.sin(angle);
+        const rotatedY = relX * Math.sin(angle) + relY * Math.cos(angle);
+        const canvasX = canvas.width / 2 + rotatedX;
+        const canvasY = canvas.height / 2 + rotatedY;
+
+        // Guard against NaN
+        if (isNaN(canvasX) || isNaN(canvasY)) return;
+
+        // Draw directly using absolute canvas coordinates with a clean transform
+        c.save();
+        c.setTransform(1, 0, 0, 1, 0, 0); // Reset any existing transforms
+
+        c.beginPath();
+        c.fillStyle = '#ff00ff';
+        c.strokeStyle = '#00ffff';
+        c.lineWidth = 2;
+        c.arc(canvasX, canvasY, 6, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+
+        c.restore();
+    } catch (err) {
+        console.error('drawPlayerLaser error', err);
+    }
 }
 
 function animatePlayerRender(player) {
@@ -445,6 +481,7 @@ function drawCargoPilotMode(cargo, centerShip) {
     c.restore()
 }
 function weaponsMode(playerShip, rotation) {
+    console.log('Rendering weapons mode indicator with rotation:', rotation);
     const canvasX = canvas.width / 2
     const canvasY = canvas.height / 2 - (10 * playerShip.shipblock)
     c.save()
@@ -462,66 +499,125 @@ function weaponsMode(playerShip, rotation) {
     c.restore()
 }
 function laserRenderPlayerMode(laser, centerShip) {
-    c.save()
-    c.translate(canvas.width/2, canvas.height/2)
-    c.rotate(-1 * centerShip.rotation)
-    c.translate(-canvas.width/2, -canvas.height/2)
-    const canvasX = canvas.width / 2 + (laser.x - centerShip.position.x)
-    const canvasY = canvas.height / 2 + (laser.y - centerShip.position.y)
-    c.translate(canvasX, canvasY)
-    c.rotate(laser.totalrotation)
-    c.beginPath()
-    c.fillStyle = '#d63031'
-    c.strokeStyle = 'white'
-    c.lineWidth = 1/4 * laser.radius
-    c.arc(0,0,laser.radius * 3/4,0, 2* Math.PI)
-    c.fill()
-    c.stroke()
-    c.restore()
+    // Debugging to help understand coordinate issues
+    console.log('Rendering laser in player mode at:', laser.x, laser.y, 'with rotation:', laser.totalrotation);
+    
+    c.save();
+    
+    // Step 1: First move to the center of the screen
+    c.translate(canvas.width/2, canvas.height/2);
+    
+    // Step 2: Rotate to counter the player's ship rotation to keep coordinates consistent
+    c.rotate(-1 * centerShip.rotation);
+    
+    // Step 3: Move back to the original coordinate system
+    c.translate(-canvas.width/2, -canvas.height/2);
+    
+    // Step 4: Calculate laser position relative to center of the screen
+    const canvasX = canvas.width / 2 + (laser.x - centerShip.position.x);
+    const canvasY = canvas.height / 2 + (laser.y - centerShip.position.y);
+    
+    // Step 5: Move to the laser position
+    c.translate(canvasX, canvasY);
+    
+    // Step 6: Rotate to match the laser's rotation angle
+    c.rotate(laser.totalrotation);
+    
+    // Step 7: Draw the laser with enhanced visibility
+    c.beginPath();
+    // Use more vibrant colors to ensure visibility
+    c.fillStyle = '#ff0000'; // Bright red
+    c.strokeStyle = '#ffffff'; // White outline
+    c.lineWidth = 1/2 * laser.radius; // Thicker outline
+    // Draw a larger circle for better visibility
+    c.arc(0, 0, laser.radius, 0, 2 * Math.PI);
+    c.fill();
+    c.stroke();
+    
+    // Optional: Add a trailing effect for better visualization
+    c.beginPath();
+    c.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+    c.moveTo(0, 0);
+    c.lineTo(-15, 0); // Draw a small tail in the opposite direction of movement
+    c.stroke();
+    
+    c.restore();
 }
 
 function laserRenderPilotMode(l, centerShip) {
-    c.save()
-    const canvasX = canvas.width / 2 + (l.x - centerShip.position.x)
-    const canvasY = canvas.height / 2 + (l.y - centerShip.position.y)
-    c.translate(canvasX, canvasY)
-    c.rotate(l.totalrotation)
-    c.beginPath()
-    c.fillStyle = '#d63031'
-    c.strokeStyle = 'white'
-    c.lineWidth = 1/4 * l.radius
-    c.arc(0,0,l.radius * 3/4,0, 2* Math.PI)
-    c.fill()
-    c.stroke()
-    c.restore()
+    c.save();
+    
+    // Calculate laser position on screen
+    const canvasX = canvas.width / 2 + (l.x - centerShip.position.x);
+    const canvasY = canvas.height / 2 + (l.y - centerShip.position.y);
+    
+    // Move to the laser position
+    c.translate(canvasX, canvasY);
+    
+    // Rotate to match the laser's rotation
+    c.rotate(l.totalrotation);
+    
+    // Draw the laser with enhanced visibility
+    c.beginPath();
+    c.fillStyle = '#ff0000'; // Bright red
+    c.strokeStyle = '#ffffff'; // White outline
+    c.lineWidth = 1/2 * l.radius;
+    c.arc(0, 0, l.radius, 0, 2 * Math.PI);
+    c.fill();
+    c.stroke();
+    
+    // Optional: Add a trailing effect for better visualization
+    c.beginPath();
+    c.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+    c.moveTo(0, 0);
+    c.lineTo(-15, 0); // Draw a small tail in the opposite direction of movement
+    c.stroke();
+    
+    c.restore();
 }
 // simple function that takes in a ship, and renders using the blocks based on the ship position
 function shipDraw(ship) {
-    const left_most_x = -1 * (5 * ship.shipblock)
-    const left_most_y = -1 * (5 * ship.shipblock)
-    for (const key_map of Object.keys(ship_map.map)) {
-
-        const sp = key_map.split("-")
-        const symb  = ship_map.map[key_map].tileSymbol
-        const start_x = left_most_x + (parseInt(sp[0]) * ship.shipblock)
-        const start_y = left_most_y+ (parseInt(sp[1]) * ship.shipblock)
-        /*
-        for (const key_tile in ship_map.tileSet) {
-            const tile = ship_map.tileSet[key_tile]
-            if (tile.tileSymbol === symb) {
-                c.drawImage(ship_mats, tile.x * 32, tile.y * 32, 32, 32, start_x, start_y, ship.shipblock, ship.shipblock)
+    if (!ship || !ship.shipblock) {
+        console.error('Invalid ship data for rendering:', ship);
+        return;
+    }
+    
+    const left_most_x = -1 * (5 * ship.shipblock);
+    const left_most_y = -1 * (5 * ship.shipblock);
+    
+    try {
+        for (const key_map of Object.keys(ship_map.map)) {
+            const sp = key_map.split("-");
+            const symb = ship_map.map[key_map].tileSymbol;
+            const start_x = left_most_x + (parseInt(sp[0]) * ship.shipblock);
+            const start_y = left_most_y + (parseInt(sp[1]) * ship.shipblock);
+            
+            // Draw the basic tile
+            c.fillStyle = ship_colors[symb];
+            c.fillRect(start_x, start_y, ship.shipblock, ship.shipblock);
+            
+            // Draw blinkies for blue tiles
+            if (c.fillStyle === "#0984e3") {
+                renderBlinkies(start_x, start_y, ship);
             }
-        }*/
-        c.fillStyle = ship_colors[symb]
-        c.fillRect(start_x,start_y,ship.shipblock,ship.shipblock)
-        if (c.fillStyle === "#0984e3") {
-            renderBlinkies(start_x,start_y,ship)
+            
+            // Draw cargo for orange tiles if cargo exists at this position
+            if (c.fillStyle === "#e17055" && 
+                ship.cargomap && 
+                ship.cargomap[parseInt(sp[0])] && 
+                ship.cargomap[parseInt(sp[0])][parseInt(sp[1])] === 1) {
+                
+                c.fillStyle = "#b2bec3";
+                const w = ship.shipblock * (3 / 4);
+                c.fillRect(
+                    start_x + (ship.shipblock / 2) - (w / 2), 
+                    start_y + (ship.shipblock / 2) - (w / 2), 
+                    w, w
+                );
+            }
         }
-        if (c.fillStyle === "#e17055" && ship.cargomap[parseInt(sp[0])][parseInt(sp[1])] === 1) {
-            c.fillStyle = "#b2bec3"
-            const w = ship.shipblock * (3/ 4)
-            c.fillRect(start_x + (ship.shipblock / 2) - (w/ 2), start_y + (ship.shipblock / 2) - (w/ 2), w, w)
-        }
+    } catch (error) {
+        console.error('Error in shipDraw:', error, { ship });
     }
 }
 function drawLabels(ship, player) {
@@ -651,45 +747,80 @@ export function animate() {
     c.fillStyle = 'black'
     c.clearRect(0, 0, canvas.width, canvas.height)
     c.fillRect(0, 0, canvas.width, canvas.height)
-    const playerShip = this.ships[this.me.currentShip]
+    
+    // Defensive check to ensure playerShip exists before using it
+    const playerShip = this.me && this.me.currentShip ? this.ships[this.me.currentShip] : null;
+    if (!playerShip) {
+        console.error('Player ship not found:', this.me ? this.me.currentShip : 'Player not initialized');
+        return; // Exit early if we don't have a valid player ship
+    }
+    
+    // Check if weapons mode is active and render the aiming reticle
+    if (this.weaponsMode) {
+        weaponsMode(playerShip, this.weaponsAngle);
+    }
+    
     if (this.me.playerView) {
         renderStarsPlayerMode(playerShip)
         for (const ship in this.ships) {
-            if (distanceCalc(playerShip, this.ships[ship]) < 1500) {
-                shipRenderPlayerMode(this.ships[ship], playerShip, this.me)
+            const targetShip = this.ships[ship];
+            // Skip invalid ships
+            if (!targetShip || !targetShip.position) continue;
+            
+            try {
+                if (distanceCalc(playerShip, targetShip) < 1500) {
+                    shipRenderPlayerMode(targetShip, playerShip, this.me)
+                }
+            } catch (error) {
+                console.error('Error rendering ship:', error, { playerShip, targetShip });
             }
         }
 
         for (const player in this.players) {
-            if (distanceCalc(playerShip, this.ships[this.players[player].currentShip]) < 1500) {
-                playerRenderPlayerMode(this.players[player], this.ships[this.players[player].currentShip], playerShip)
+            const targetPlayer = this.players[player];
+            // Skip invalid players or players without a valid ship
+            if (!targetPlayer || !targetPlayer.currentShip || !this.ships[targetPlayer.currentShip]) continue;
+            
+            try {
+                if (distanceCalc(playerShip, this.ships[targetPlayer.currentShip]) < 1500) {
+                    playerRenderPlayerMode(targetPlayer, this.ships[targetPlayer.currentShip], playerShip)
+                }
+            } catch (error) {
+                console.error('Error rendering player:', error, { playerShip, targetPlayer });
             }
         }
-        for (const laser of this.playerlasers) {
-            if (laser.ship === this.me.currentShip) {
-                drawPlayerLaser(laser, playerShip)
-            }
-        }
-        for (const cargo of this.cargo) {
-            if (distanceCalcCargo(playerShip, cargo) < 1500) {
-                drawCargoPlayerMode(cargo, playerShip)
-            }
-        }
-        if (this.weaponsMode) {
-            weaponsMode(playerShip, this.weaponsAngle)
-        }
+        
+        // Draw ship-fired lasers in player view
         for (const laser of this.shiplasers) {
-            if (distanceCalc(playerShip, laser) < 1500) {
-                laserRenderPlayerMode(laser, playerShip)
+            const dist = distanceCalc(playerShip, laser);
+            if (dist < 1500) {
+                laserRenderPlayerMode(laser, playerShip);
+            } else {
+                console.log(`Laser out of range: distance ${dist.toFixed(2)}`);
+            }
+        }
+
+        // Draw actual player lasers at their true positions
+        for (const laser of this.playerlasers) {
+            if (laser && distanceCalc(playerShip, laser) < 1500) {
+                drawPlayerLaser(laser, playerShip)
             }
         }
         // menu rendering stack goes here
         if (menustack.length >= 1) {
-            menuRender(menustack[menustack.length - 1], this)
+            try {
+                menuRender(menustack[menustack.length - 1], this)
+            } catch (error) {
+                console.error('Error rendering menu:', error);
+            }
         }  
         
         if (playerShip.shieldsDownBurn > 0) {
-            shieldsDown()
+            try {
+                shieldsDown()
+            } catch (error) {
+                console.error('Error in shields down animation:', error);
+            }
         }
     }
     else {
@@ -709,9 +840,10 @@ export function animate() {
                 drawCargoPilotMode(cargo, playerShip)
             }
         }
+        // Draw ship-fired lasers in pilot mode
         for (const laser of this.shiplasers) {
             if (distanceCalc(playerShip, laser) < 1500) {
-                laserRenderPilotMode(laser, playerShip)
+                laserRenderPilotMode(laser, playerShip);
             }
         }
     }
